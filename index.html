@@ -6,1281 +6,483 @@
     <title>Primesh Marasinghe</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet" />
     <style>
-      *,
-      *::before,
-      *::after {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
+      *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+      :root{
+        --bg:#111114;--bg2:#18181c;--cream:#e8e3d9;--white:#fff;--muted:#777;--border:#242428;
       }
-      :root {
-        --bg: #111114;
-        --bg2: #18181c;
-        --cream: #e8e3d9;
-        --white: #fff;
-        --muted: #777;
-        --border: #242428;
+      html{scroll-behavior:smooth;}
+      body{background:var(--bg);color:var(--cream);font-family:"Inter",sans-serif;overflow-x:hidden;}
+      a{color:inherit;text-decoration:none;}
+
+      /* ══ PARTICLE CANVAS ══ */
+      #particleCanvas{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:0.45;}
+
+      /* ══ ANIMATED GRID ══ */
+      .grid-overlay{
+        position:fixed;inset:0;pointer-events:none;z-index:0;
+        background-image:
+          linear-gradient(rgba(232,227,217,0.025) 1px,transparent 1px),
+          linear-gradient(90deg,rgba(232,227,217,0.025) 1px,transparent 1px);
+        background-size:60px 60px;
+        animation:gridShift 20s linear infinite;
+        opacity:0.6;
       }
-      html {
-        scroll-behavior: smooth;
-      }
-      body {
-        background: var(--bg);
-        color: var(--cream);
-        font-family: "Inter", sans-serif;
-        overflow-x: hidden;
-      }
-      a {
-        color: inherit;
-        text-decoration: none;
+      @keyframes gridShift{
+        0%{background-position:0 0;}
+        100%{background-position:60px 60px;}
       }
 
-      /* ══════════════════════════════════
-   CUSTOM CURSOR
-══════════════════════════════════ */
-      #cursor {
-        position: fixed;
-        width: 10px;
-        height: 10px;
-        background: var(--cream);
-        border-radius: 50%;
-        pointer-events: none;
-        z-index: 9999;
-        transform: translate(-50%, -50%);
-        mix-blend-mode: difference;
-        transition:
-          width 0.25s,
-          height 0.25s;
+      /* ══ CUSTOM CURSOR ══ */
+      #cursor{position:fixed;width:10px;height:10px;background:var(--cream);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:difference;transition:width .25s,height .25s;}
+      #cursorRing{position:fixed;width:36px;height:36px;border:1.5px solid rgba(232,227,217,.45);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:width .3s,height .3s,border-color .3s;}
+      body.cursor-hover #cursor{width:18px;height:18px;}
+      body.cursor-hover #cursorRing{width:54px;height:54px;border-color:rgba(232,227,217,.7);}
+
+      /* ══ GLITCH TEXT ══ */
+      .glitch{position:relative;}
+      .glitch::before,.glitch::after{
+        content:attr(data-text);
+        position:absolute;inset:0;
+        clip-path:polygon(0 0,100% 0,100% 45%,0 45%);
       }
-      #cursorRing {
-        position: fixed;
-        width: 36px;
-        height: 36px;
-        border: 1.5px solid rgba(232, 227, 217, 0.45);
-        border-radius: 50%;
-        pointer-events: none;
-        z-index: 9998;
-        transform: translate(-50%, -50%);
-        transition:
-          width 0.3s,
-          height 0.3s,
-          border-color 0.3s;
+      .glitch::before{
+        left:2px;text-shadow:-2px 0 #6366f1;
+        animation:glitch1 4s infinite linear;
+        opacity:0;
       }
-      body.cursor-hover #cursor {
-        width: 18px;
-        height: 18px;
+      .glitch::after{
+        left:-2px;text-shadow:2px 0 #a78bfa;
+        animation:glitch2 4s infinite linear;
+        opacity:0;
       }
-      body.cursor-hover #cursorRing {
-        width: 54px;
-        height: 54px;
-        border-color: rgba(232, 227, 217, 0.7);
+      @keyframes glitch1{
+        0%,94%,100%{opacity:0;transform:skewX(0deg);}
+        95%{opacity:1;transform:skewX(-4deg);}
+        96%{opacity:1;transform:skewX(3deg);}
+        97%{opacity:0;}
+      }
+      @keyframes glitch2{
+        0%,92%,100%{opacity:0;transform:skewX(0deg);}
+        93%{opacity:1;transform:skewX(5deg);}
+        94%{opacity:1;transform:skewX(-3deg);}
+        95%{opacity:0;}
       }
 
-      /* ══════════════════════════════════
-   HERO
-══════════════════════════════════ */
-      .hero {
-        position: relative;
-        min-height: 100svh;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
+      /* ══ SCANNING LINE ══ */
+      .scan-line{
+        position:fixed;top:-4px;left:0;width:100%;height:2px;
+        background:linear-gradient(90deg,transparent 0%,rgba(99,102,241,.6) 40%,rgba(167,139,250,.9) 50%,rgba(99,102,241,.6) 60%,transparent 100%);
+        animation:scanDown 8s ease-in-out infinite;
+        pointer-events:none;z-index:9997;
+        box-shadow:0 0 16px rgba(167,139,250,.5),0 0 40px rgba(99,102,241,.3);
       }
-      /* noise */
-      .hero::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-        z-index: 1;
-        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");
+      @keyframes scanDown{
+        0%{top:-4px;opacity:0;}
+        5%{opacity:1;}
+        95%{opacity:0.4;}
+        100%{top:100vh;opacity:0;}
       }
+
+      /* ══ SCROLL PROGRESS ══ */
+      .scroll-bar{position:fixed;top:0;left:0;height:2px;width:0%;background:linear-gradient(90deg,#6366f1,#a78bfa);z-index:9999;transition:width .1s linear;pointer-events:none;}
+
+      /* ══ DATA TICKER ══ */
+      .data-ticker{
+        position:fixed;bottom:0;left:0;right:0;
+        height:28px;
+        background:rgba(17,17,20,.85);
+        border-top:1px solid rgba(99,102,241,.2);
+        overflow:hidden;
+        pointer-events:none;z-index:8000;
+        display:flex;align-items:center;
+      }
+      .ticker-track{
+        display:flex;gap:64px;
+        animation:tickerScroll 30s linear infinite;
+        white-space:nowrap;
+        padding-left:100%;
+      }
+      .ticker-item{
+        font-size:10px;font-weight:700;letter-spacing:.09em;
+        text-transform:uppercase;
+        color:rgba(167,139,250,.65);
+        display:flex;align-items:center;gap:8px;
+      }
+      .ticker-item span{color:rgba(99,240,180,.65);}
+      @keyframes tickerScroll{
+        0%{transform:translateX(0);}
+        100%{transform:translateX(-50%);}
+      }
+
+      /* ══ HERO ══ */
+      .hero{position:relative;min-height:100svh;display:flex;flex-direction:column;overflow:hidden;z-index:1;}
+      .hero::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");}
+
       /* orbs */
-      .orb {
-        position: absolute;
-        border-radius: 50%;
-        filter: blur(100px);
-        opacity: 0.55;
-        pointer-events: none;
-        will-change: transform;
-        transition: transform 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      .orb{position:absolute;border-radius:50%;filter:blur(100px);opacity:0.55;pointer-events:none;will-change:transform;transition:transform .9s cubic-bezier(.25,.46,.45,.94);}
+      #orb1{width:520px;height:520px;background:#252538;top:-140px;left:-120px;animation:orbPulse1 8s ease-in-out infinite;}
+      #orb2{width:620px;height:620px;background:#1c1c2e;top:60px;right:-160px;animation:orbPulse2 10s ease-in-out infinite;}
+      #orb3{width:440px;height:440px;background:#222234;bottom:-60px;left:28%;animation:orbPulse3 12s ease-in-out infinite;}
+      #orb4{width:360px;height:360px;background:#2e2e46;top:180px;left:8%;animation:orbPulse1 9s ease-in-out infinite reverse;}
+      #orb5{width:460px;height:460px;background:#1a1a2c;bottom:80px;right:8%;animation:orbPulse2 11s ease-in-out infinite reverse;}
+      /* NEW atmospheric orb */
+      #orb6{width:300px;height:300px;background:radial-gradient(circle,#3b3bcc22 0%,#6622cc11 100%);top:40%;left:45%;animation:orbPulse3 7s ease-in-out infinite;filter:blur(60px);opacity:0.4;}
+
+      @keyframes orbPulse1{
+        0%,100%{transform:scale(1) translate(0,0);}
+        33%{transform:scale(1.08) translate(12px,-8px);}
+        66%{transform:scale(0.94) translate(-8px,12px);}
       }
-      #orb1 {
-        width: 520px;
-        height: 520px;
-        background: #252538;
-        top: -140px;
-        left: -120px;
+      @keyframes orbPulse2{
+        0%,100%{transform:scale(1) translate(0,0);}
+        33%{transform:scale(0.92) translate(-10px,10px);}
+        66%{transform:scale(1.06) translate(14px,-6px);}
       }
-      #orb2 {
-        width: 620px;
-        height: 620px;
-        background: #1c1c2e;
-        top: 60px;
-        right: -160px;
-      }
-      #orb3 {
-        width: 440px;
-        height: 440px;
-        background: #222234;
-        bottom: -60px;
-        left: 28%;
-      }
-      #orb4 {
-        width: 360px;
-        height: 360px;
-        background: #2e2e46;
-        top: 180px;
-        left: 8%;
-      }
-      #orb5 {
-        width: 460px;
-        height: 460px;
-        background: #1a1a2c;
-        bottom: 80px;
-        right: 8%;
+      @keyframes orbPulse3{
+        0%,100%{transform:scale(1) translate(0,0);}
+        50%{transform:scale(1.12) translate(-6px,-12px);}
       }
 
       /* sparkles */
-      .sp {
-        position: absolute;
-        border-radius: 50%;
-        pointer-events: none;
-        background: rgba(232, 227, 217, 0.7);
-        animation: spk 3.5s ease-in-out infinite;
-      }
-      .sp:nth-child(1) {
-        width: 4px;
-        height: 4px;
-        top: 12%;
-        left: 14%;
-        animation-delay: 0s;
-      }
-      .sp:nth-child(2) {
-        width: 3px;
-        height: 3px;
-        top: 22%;
-        right: 18%;
-        animation-delay: 0.7s;
-      }
-      .sp:nth-child(3) {
-        width: 3px;
-        height: 3px;
-        top: 62%;
-        left: 9%;
-        animation-delay: 1.2s;
-      }
-      .sp:nth-child(4) {
-        width: 4px;
-        height: 4px;
-        bottom: 28%;
-        right: 14%;
-        animation-delay: 1.8s;
-      }
-      .sp:nth-child(5) {
-        width: 2px;
-        height: 2px;
-        top: 42%;
-        left: 58%;
-        animation-delay: 2.4s;
-      }
-      .sp:nth-child(6) {
-        width: 3px;
-        height: 3px;
-        bottom: 18%;
-        left: 38%;
-        animation-delay: 0.4s;
-      }
-      @keyframes spk {
-        0%,
-        100% {
-          opacity: 0;
-          transform: scale(0);
-        }
-        50% {
-          opacity: 1;
-          transform: scale(1);
-        }
-      }
+      .sp{position:absolute;border-radius:50%;pointer-events:none;background:rgba(232,227,217,.7);animation:spk 3.5s ease-in-out infinite;}
+      .sp:nth-child(1){width:4px;height:4px;top:12%;left:14%;animation-delay:0s;}
+      .sp:nth-child(2){width:3px;height:3px;top:22%;right:18%;animation-delay:.7s;}
+      .sp:nth-child(3){width:3px;height:3px;top:62%;left:9%;animation-delay:1.2s;}
+      .sp:nth-child(4){width:4px;height:4px;bottom:28%;right:14%;animation-delay:1.8s;}
+      .sp:nth-child(5){width:2px;height:2px;top:42%;left:58%;animation-delay:2.4s;}
+      .sp:nth-child(6){width:3px;height:3px;bottom:18%;left:38%;animation-delay:.4s;}
+      /* extra sparkles */
+      .sp:nth-child(7){width:3px;height:3px;top:35%;right:32%;animation-delay:1.6s;}
+      .sp:nth-child(8){width:2px;height:2px;top:78%;left:55%;animation-delay:3.1s;}
+      .sp:nth-child(9){width:4px;height:4px;top:8%;left:72%;animation-delay:2.0s;}
+      .sp:nth-child(10){width:2px;height:2px;bottom:40%;left:22%;animation-delay:.9s;}
+      @keyframes spk{0%,100%{opacity:0;transform:scale(0);}50%{opacity:1;transform:scale(1);}}
 
       /* NAV */
-      .hero-nav {
-        position: relative;
-        z-index: 10;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 28px 48px;
-        flex-wrap: wrap;
-        gap: 12px;
+      .hero-nav{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:28px 48px;flex-wrap:wrap;gap:12px;}
+      .nav-left{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+      .nav-btn{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:9px 18px;background:transparent;cursor:pointer;transition:background .25s,color .25s,transform .2s,border-color .25s;}
+      .nav-btn-primary{border:1.5px solid var(--cream);color:var(--cream);}
+      .nav-btn-primary:hover{background:var(--cream);color:var(--bg);transform:translateY(-2px);}
+      .nav-btn-ghost{border:1.5px solid rgba(232,227,217,.28);color:rgba(232,227,217,.6);}
+      .nav-btn-ghost:hover{border-color:var(--cream);color:var(--cream);transform:translateY(-2px);}
+      .nav-btn svg{width:12px;height:12px;flex-shrink:0;}
+      .nav-right{display:flex;gap:36px;}
+      .nav-right a{font-size:14px;font-weight:500;color:var(--cream);transition:opacity .2s,transform .2s;display:inline-block;}
+      .nav-right a:hover{opacity:.5;transform:translateY(-2px);}
+
+      /* STATUS PILL */
+      .status-pill{
+        display:inline-flex;align-items:center;gap:6px;
+        font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+        padding:6px 12px;border-radius:100px;
+        border:1px solid rgba(99,240,180,.25);
+        color:rgba(99,240,180,.8);
+        background:rgba(99,240,180,.05);
       }
-      .nav-left {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
-      }
-      .nav-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.09em;
-        text-transform: uppercase;
-        padding: 9px 18px;
-        background: transparent;
-        cursor: pointer;
-        transition:
-          background 0.25s,
-          color 0.25s,
-          transform 0.2s,
-          border-color 0.25s;
-      }
-      .nav-btn-primary {
-        border: 1.5px solid var(--cream);
-        color: var(--cream);
-      }
-      .nav-btn-primary:hover {
-        background: var(--cream);
-        color: var(--bg);
-        transform: translateY(-2px);
-      }
-      .nav-btn-ghost {
-        border: 1.5px solid rgba(232, 227, 217, 0.28);
-        color: rgba(232, 227, 217, 0.6);
-      }
-      .nav-btn-ghost:hover {
-        border-color: var(--cream);
-        color: var(--cream);
-        transform: translateY(-2px);
-      }
-      .nav-btn svg {
-        width: 12px;
-        height: 12px;
-        flex-shrink: 0;
-      }
-      .nav-right {
-        display: flex;
-        gap: 36px;
-      }
-      .nav-right a {
-        font-size: 14px;
-        font-weight: 500;
-        color: var(--cream);
-        transition:
-          opacity 0.2s,
-          transform 0.2s;
-        display: inline-block;
-      }
-      .nav-right a:hover {
-        opacity: 0.5;
-        transform: translateY(-2px);
-      }
+      .status-dot{width:6px;height:6px;border-radius:50%;background:#63f0b4;animation:statusPulse 2s ease-in-out infinite;}
+      @keyframes statusPulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(99,240,180,.4);}50%{opacity:.7;box-shadow:0 0 0 4px rgba(99,240,180,0);}}
 
       /* BIG NAME */
-      .hero-name-wrap {
-        position: relative;
-        z-index: 10;
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .hero-name-container {
-        position: relative;
-        display: inline-block;
-        transform-style: preserve-3d;
-        transition: transform 0.12s ease-out;
-      }
-      .hero-name {
-        text-align: center;
-        font-size: clamp(72px, 13.5vw, 180px);
-        font-weight: 900;
-        letter-spacing: -0.045em;
-        line-height: 0.88;
-        color: var(--cream);
-        user-select: none;
-        text-shadow:
-          1px 1px 0 rgba(255, 255, 255, 0.03),
-          3px 3px 0 rgba(0, 0, 0, 0.25),
-          6px 6px 0 rgba(0, 0, 0, 0.12),
-          12px 12px 28px rgba(0, 0, 0, 0.35);
+      .hero-name-wrap{position:relative;z-index:10;flex:1;display:flex;align-items:center;justify-content:center;}
+      .hero-name-container{position:relative;display:inline-block;transform-style:preserve-3d;transition:transform .12s ease-out;}
+      .hero-name{
+        text-align:center;
+        font-size:clamp(72px,13.5vw,180px);
+        font-weight:900;letter-spacing:-.045em;line-height:.88;
+        color:var(--cream);user-select:none;
+        text-shadow:1px 1px 0 rgba(255,255,255,.03),3px 3px 0 rgba(0,0,0,.25),6px 6px 0 rgba(0,0,0,.12),12px 12px 28px rgba(0,0,0,.35);
       }
 
       /* AVATAR */
-      .hero-avatar {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%) translateZ(50px);
-        width: 186px;
-        height: 210px;
-        border-radius: 18px;
-        overflow: hidden;
-        box-shadow:
-          0 24px 60px rgba(0, 0, 0, 0.75),
-          0 0 0 1px rgba(255, 255, 255, 0.07);
-        animation: floatUp 4s ease-in-out infinite;
-        transition:
-          box-shadow 0.3s,
-          transform 0.12s ease-out;
-        z-index: 20;
-      }
-      .hero-avatar:hover {
-        box-shadow:
-          0 32px 80px rgba(0, 0, 0, 0.85),
-          0 0 0 1px rgba(255, 255, 255, 0.18);
-      }
-      @keyframes floatUp {
-        0%,
-        100% {
-          margin-top: 0;
-        }
-        50% {
-          margin-top: -14px;
-        }
-      }
-      .avatar-inner {
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(160deg, #2e2e2e 0%, #1c1c1c 100%);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-      }
-      .avatar-image {
-        width: 100%;
+      .hero-avatar{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) translateZ(50px);width:300px;height:400px;border-radius:18px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.75),0 0 0 1px rgba(255,255,255,.07);animation:floatUp 4s ease-in-out infinite;transition:box-shadow .3s,transform .12s ease-out;z-index:20;}
+      .hero-avatar:hover{box-shadow:0 32px 80px rgba(0,0,0,.85),0 0 0 1px rgba(255,255,255,.18),0 0 40px rgba(99,102,241,.15);}
+      @keyframes floatUp{0%,100%{margin-top:0;}50%{margin-top:-14px;}}
+      .avatar-inner{width:100%;height:100%;background:linear-gradient(160deg,#2e2e2e 0%,#1c1c1c 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;}
+      .avatar-image{width:100%;height:100%;object-fit:cover;border-radius:0%;}
 
-        height: 100%;
+      /* HERO BOTTOM */
+      .hero-bottom{position:relative;z-index:10;display:flex;justify-content:space-between;align-items:flex-end;padding:0 48px 44px;gap:16px;}
+      .hero-bio{font-size:15px;line-height:1.65;color:var(--cream);max-width:360px;}
+      .hero-bio a{text-decoration:underline;text-underline-offset:3px;}
+      .hero-bio-right{text-align:right;}
 
-        object-fit: cover;
+      /* ══ SECTION BASE ══ */
+      .sec{padding:88px 48px;border-top:1px solid var(--border);position:relative;z-index:1;}
+      .big-title{font-size:clamp(36px,6.5vw,92px);font-weight:900;letter-spacing:-.04em;line-height:1;color:var(--cream);text-transform:uppercase;margin-bottom:64px;}
 
-        border-radius: 0%;
-      }
-      @keyframes breathe {
-        0%,
-        100% {
-          transform: scale(1);
-        }
-        50% {
-          transform: scale(1.07);
-        }
-      }
-      .avatar-label {
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: rgba(232, 227, 217, 0.35);
-      }
+      /* ══ ABOUT ══ */
+      .about-headline{font-size:clamp(28px,5.5vw,86px);font-weight:900;letter-spacing:-.035em;line-height:1;color:var(--cream);text-transform:uppercase;margin-bottom:64px;}
+      .about-cols{display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:start;}
+      .about-text p{font-size:17px;line-height:1.82;color:var(--cream);margin-bottom:20px;}
+      .about-text p:last-child{margin-bottom:0;}
+      .about-skills{display:flex;flex-direction:column;gap:28px;}
+      .skill-group h4{font-size:15px;font-weight:700;color:var(--white);margin-bottom:6px;}
+      .skill-group p{font-size:13.5px;line-height:1.65;color:var(--muted);}
 
-      /* BOTTOM BIO */
-      .hero-bottom {
-        position: relative;
-        z-index: 10;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        padding: 0 48px 44px;
-        gap: 16px;
-      }
-      .hero-bio {
-        font-size: 15px;
-        line-height: 1.65;
-        color: var(--cream);
-        max-width: 360px;
-      }
-      .hero-bio a {
-        text-decoration: underline;
-        text-underline-offset: 3px;
-      }
-      .hero-bio-right {
-        text-align: right;
-      }
-
-      /* ══════════════════════════════════
-   SECTION BASE
-══════════════════════════════════ */
-      .sec {
-        padding: 88px 48px;
-        border-top: 1px solid var(--border);
-      }
-
-      /* big reused title */
-      .big-title {
-        font-size: clamp(36px, 6.5vw, 92px);
-        font-weight: 900;
-        letter-spacing: -0.04em;
-        line-height: 1;
-        color: var(--cream);
-        text-transform: uppercase;
-        margin-bottom: 64px;
-      }
-
-      /* ══════════════════════════════════
-   ABOUT
-══════════════════════════════════ */
-      .about-headline {
-        font-size: clamp(28px, 5.5vw, 86px);
-        font-weight: 900;
-        letter-spacing: -0.035em;
-        line-height: 1;
-        color: var(--cream);
-        text-transform: uppercase;
-        margin-bottom: 64px;
-      }
-      .about-cols {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 72px;
-        align-items: start;
-      }
-      .about-text p {
-        font-size: 17px;
-        line-height: 1.82;
-        color: var(--cream);
-        margin-bottom: 20px;
-      }
-      .about-text p:last-child {
-        margin-bottom: 0;
-      }
-      .about-skills {
-        display: flex;
-        flex-direction: column;
-        gap: 28px;
-      }
-      .skill-group h4 {
-        font-size: 15px;
-        font-weight: 700;
-        color: var(--white);
-        margin-bottom: 6px;
-      }
-      .skill-group p {
-        font-size: 13.5px;
-        line-height: 1.65;
-        color: var(--muted);
-      }
-
-      /* ══════════════════════════════════
-   PROJECTS
-══════════════════════════════════ */
-      .sec-projects {
-        padding: 80px 0;
-        border-top: 1px solid var(--border);
-      }
-      .projects-big-title {
-        text-align: center;
-        font-size: clamp(44px, 10vw, 140px);
-        font-weight: 900;
-        letter-spacing: -0.045em;
-        color: var(--cream);
-        text-transform: uppercase;
-        margin-bottom: 16px;
-      }
-      .projects-sub {
-        text-align: center;
-        font-size: 11.5px;
-        font-weight: 600;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--muted);
-        margin-bottom: 64px;
-        padding: 0 48px;
-      }
-      .projects-list {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        padding: 0 48px;
-      }
+      /* ══ PROJECTS ══ */
+      .sec-projects{padding:80px 0;border-top:1px solid var(--border);position:relative;z-index:1;}
+      .projects-big-title{text-align:center;font-size:clamp(44px,10vw,140px);font-weight:900;letter-spacing:-.045em;color:var(--cream);text-transform:uppercase;margin-bottom:16px;}
+      .projects-sub{text-align:center;font-size:11.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:64px;padding:0 48px;}
+      .projects-list{display:flex;flex-direction:column;gap:20px;padding:0 48px;}
 
       /* PROJECT CARD */
-      .project-card {
-        background: var(--bg2);
-        border-radius: 20px;
-        padding: 40px;
-        display: grid;
-        grid-template-columns: 1fr 1.15fr;
-        gap: 52px;
-        align-items: center;
-        transition:
-          background 0.25s,
-          transform 0.15s ease-out,
-          box-shadow 0.25s;
-        transform-style: preserve-3d;
-        will-change: transform;
-        cursor: default;
+      .project-card{
+        background:var(--bg2);border-radius:20px;padding:40px;
+        display:grid;grid-template-columns:1fr 1.15fr;gap:52px;align-items:center;
+        transition:background .25s,transform .15s ease-out,box-shadow .25s;
+        transform-style:preserve-3d;will-change:transform;cursor:default;
+        position:relative;overflow:hidden;
       }
-      .project-card:hover {
-        background: #1d1d22;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      /* animated border shimmer on hover */
+      .project-card::before{
+        content:"";
+        position:absolute;inset:0;border-radius:20px;
+        background:linear-gradient(120deg,transparent 0%,rgba(99,102,241,.08) 40%,rgba(167,139,250,.12) 60%,transparent 100%);
+        background-size:200% 100%;
+        opacity:0;
+        transition:opacity .3s;
+        pointer-events:none;
       }
+      .project-card:hover::before{opacity:1;animation:shimmerSlide 1.5s ease-in-out infinite;}
+      @keyframes shimmerSlide{
+        0%{background-position:200% 0;}
+        100%{background-position:-200% 0;}
+      }
+      .project-card:hover{background:#1d1d22;box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 0 1px rgba(99,102,241,.1);}
 
-      .proj-btns {
-        display: flex;
-        gap: 12px;
-        margin-bottom: 24px;
-      }
-      .proj-btn {
-        width: 46px;
-        height: 46px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0;
-        transition:
-          transform 0.2s,
-          opacity 0.2s,
-          box-shadow 0.2s;
-      }
-      .proj-btn:hover {
-        transform: translateY(-3px) scale(1.05);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
-      }
-      .proj-btn-white {
-        background: var(--white);
-        color: var(--bg);
-      }
-      .proj-btn-dark {
-        background: #2c2c30;
-        color: var(--cream);
-      }
-      .proj-btn svg {
-        width: 19px;
-        height: 19px;
-      }
+      .proj-btns{display:flex;gap:12px;margin-bottom:24px;}
+      .proj-btn{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0;transition:transform .2s,opacity .2s,box-shadow .2s;}
+      .proj-btn:hover{transform:translateY(-3px) scale(1.05);box-shadow:0 8px 20px rgba(0,0,0,.5);}
+      .proj-btn-white{background:var(--white);color:var(--bg);}
+      .proj-btn-dark{background:#2c2c30;color:var(--cream);}
+      .proj-btn svg{width:19px;height:19px;}
 
-      .project-card h3 {
-        font-size: clamp(18px, 2vw, 26px);
-        font-weight: 700;
-        color: var(--white);
-        letter-spacing: -0.03em;
-        margin-bottom: 12px;
-      }
-      .project-card p {
-        font-size: 13.5px;
-        line-height: 1.72;
-        color: var(--muted);
-        margin-bottom: 18px;
-      }
-      .project-tags {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-      }
-      .project-tags span {
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.07em;
-        text-transform: uppercase;
-        color: var(--cream);
-      }
+      .project-card h3{font-size:clamp(18px,2vw,26px);font-weight:700;color:var(--white);letter-spacing:-.03em;margin-bottom:12px;}
+      .project-card p{font-size:13.5px;line-height:1.72;color:var(--muted);margin-bottom:18px;}
+      .project-tags{display:flex;flex-wrap:wrap;gap:12px;}
+      .project-tags span{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--cream);}
 
-      /* LAPTOP MOCK */
-      .laptop-mock {
-        width: 100%;
-      }
-      .laptop-frame {
-        background: #1e1e1e;
-        border-radius: 10px;
-        border: 2px solid #2e2e2e;
-        padding: 14px 14px 8px;
-        box-shadow: 0 16px 50px rgba(0, 0, 0, 0.55);
-        transition:
-          transform 0.25s ease-out,
-          box-shadow 0.25s;
-      }
-      .project-card:hover .laptop-frame {
-        transform: translateY(-4px) rotateX(2deg);
-        box-shadow: 0 28px 70px rgba(0, 0, 0, 0.65);
-      }
-      .laptop-screen {
-        border-radius: 4px;
-        height: 190px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .screen-inner {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-      }
-      .screen-title {
-        font-size: 13px;
-        font-weight: 700;
-        color: var(--cream);
-        letter-spacing: -0.01em;
-      }
-      .screen-sub {
-        font-size: 10px;
-        color: var(--muted);
-        letter-spacing: 0.03em;
-      }
-      .laptop-base {
-        background: #1a1a1a;
-        height: 10px;
-        border-radius: 0 0 6px 6px;
-        margin-top: 1px;
-      }
-      .laptop-foot {
-        background: #161616;
-        height: 4px;
-        width: 36%;
-        margin: 0 auto;
-        border-radius: 0 0 4px 4px;
-      }
+      /* ═══ UNIFIED PROJECT VISUAL ═══ */
+      .proj-visual{width:100%;display:flex;align-items:center;justify-content:center;}
 
-      /* screen colors */
-      .sc-blue {
-        background: linear-gradient(135deg, #0c1626 0%, #182f5a 100%);
+      /* Laptop mock */
+      .laptop-mock{width:100%;}
+      .laptop-frame{
+        background:#1e1e1e;border-radius:10px;border:2px solid #2e2e2e;
+        padding:14px 14px 8px;
+        box-shadow:0 16px 50px rgba(0,0,0,.55);
+        transition:transform .25s ease-out,box-shadow .25s;
       }
-      .sc-purple {
-        background: linear-gradient(135deg, #180430 0%, #380d65 100%);
-      }
-      .sc-green {
-        background: linear-gradient(135deg, #031610 0%, #0c4428 100%);
-      }
-      .sc-red {
-        background: linear-gradient(135deg, #180808 0%, #421010 100%);
-      }
-      .sc-teal {
-        background: linear-gradient(135deg, #021212 0%, #0b3838 100%);
-      }
-      .sc-indigo {
-        background: linear-gradient(135deg, #0a0a18 0%, #1a1844 100%);
-      }
-      .sc-amber {
-        background: linear-gradient(135deg, #180e00 0%, #3c2200 100%);
-      }
-      .sc-pink {
-        background: linear-gradient(135deg, #180410 0%, #450d28 100%);
-      }
+      .project-card:hover .laptop-frame{transform:translateY(-4px) rotateX(2deg);box-shadow:0 28px 70px rgba(0,0,0,.65);}
+      .laptop-screen{border-radius:4px;height:190px;display:flex;align-items:center;justify-content:center;}
+      .screen-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;}
+      .screen-title{font-size:13px;font-weight:700;color:var(--cream);letter-spacing:-.01em;}
+      .screen-sub{font-size:10px;color:var(--muted);letter-spacing:.03em;}
+      .laptop-base{background:#1a1a1a;height:10px;border-radius:0 0 6px 6px;margin-top:1px;}
+      .laptop-foot{background:#161616;height:4px;width:36%;margin:0 auto;border-radius:0 0 4px 4px;}
 
-      /* ══════════════════════════════════
-   EDUCATION
-══════════════════════════════════ */
-      .edu-rows {
-        display: flex;
-        flex-direction: column;
+      /* Flat project image (no laptop wrapper) */
+      .project-image-flat{
+        width:100%;height:240px;object-fit:cover;border-radius:12px;
+        box-shadow:0 16px 50px rgba(0,0,0,.55);
+        transition:transform .25s ease-out,box-shadow .25s;
       }
-      .edu-row {
-        display: grid;
-        grid-template-columns: 120px 1fr;
-        gap: 40px;
-        padding: 28px 0;
-        border-bottom: 1px solid var(--border);
-        align-items: start;
-        transition: background 0.2s;
-      }
-      .edu-row:last-child {
-        border-bottom: none;
-      }
-      .edu-year {
-        font-size: 12px;
-        color: var(--muted);
-        padding-top: 3px;
-      }
-      .edu-content h3 {
-        font-size: 17px;
-        font-weight: 700;
-        color: var(--white);
-        letter-spacing: -0.02em;
-        margin-bottom: 4px;
-      }
-      .edu-content p {
-        font-size: 13px;
-        color: var(--muted);
-      }
-      .award-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        margin-top: 10px;
-        background: rgba(251, 191, 36, 0.07);
-        border: 1px solid rgba(251, 191, 36, 0.18);
-        color: #fbbf24;
-        font-size: 11px;
-        font-weight: 600;
-        padding: 4px 12px;
-        border-radius: 100px;
-      }
+      .project-card:hover .project-image-flat{transform:translateY(-4px);box-shadow:0 28px 70px rgba(0,0,0,.65);}
 
-      /* ══════════════════════════════════
-   LEADERSHIP
-══════════════════════════════════ */
-      .vol-cards {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
-      }
-      .vol-card {
-        background: var(--bg2);
-        border-radius: 18px;
-        padding: 32px;
-        transition:
-          background 0.2s,
-          transform 0.2s,
-          box-shadow 0.2s;
-      }
-      .vol-card:hover {
-        background: #1e1e24;
-        transform: translateY(-3px);
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
-      }
-      .vol-org {
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.09em;
-        text-transform: uppercase;
-        color: var(--muted);
-        margin-bottom: 10px;
-      }
-      .vol-card h3 {
-        font-size: 20px;
-        font-weight: 800;
-        color: var(--white);
-        letter-spacing: -0.03em;
-        margin-bottom: 10px;
-      }
-      .vol-card p {
-        font-size: 13px;
-        color: var(--muted);
-        line-height: 1.75;
-      }
+      /* Screen colors */
+      .sc-blue{background:linear-gradient(135deg,#0c1626 0%,#182f5a 100%);}
+      .sc-purple{background:linear-gradient(135deg,#180430 0%,#380d65 100%);}
+      .sc-green{background:linear-gradient(135deg,#031610 0%,#0c4428 100%);}
+      .sc-red{background:linear-gradient(135deg,#180808 0%,#421010 100%);}
+      .sc-teal{background:linear-gradient(135deg,#021212 0%,#0b3838 100%);}
+      .sc-indigo{background:linear-gradient(135deg,#0a0a18 0%,#1a1844 100%);}
+      .sc-amber{background:linear-gradient(135deg,#180e00 0%,#3c2200 100%);}
+      .sc-pink{background:linear-gradient(135deg,#180410 0%,#450d28 100%);}
+      .sc-slate{background:linear-gradient(135deg,#0c0c14 0%,#1a1a2e 100%);}
+      .sc-emerald{background:linear-gradient(135deg,#041410 0%,#0a3020 100%);}
+      .sc-rose{background:linear-gradient(135deg,#180410 0%,#380820 100%);}
 
-      /* ══════════════════════════════════
-   CONTACT
-══════════════════════════════════ */
-      .sec-contact {
-        padding: 96px 48px 80px;
-        border-top: 1px solid var(--border);
-        text-align: center;
-      }
-      .contact-title {
-        font-size: clamp(36px, 6.5vw, 80px);
-        font-weight: 900;
-        letter-spacing: -0.045em;
-        text-transform: uppercase;
-        color: var(--cream);
-        margin-bottom: 18px;
-      }
-      .contact-sub {
-        font-size: 16px;
-        color: var(--cream);
-        margin-bottom: 8px;
-      }
-      .contact-sub strong {
-        font-weight: 700;
-      }
-      .contact-note {
-        font-size: 13.5px;
-        color: var(--muted);
-        margin-bottom: 52px;
-      }
-      .contact-card {
-        max-width: 520px;
-        margin: 0 auto;
-        background: var(--bg2);
-        border-radius: 18px;
-        padding: 36px;
-        text-align: left;
-        border: 1px solid var(--border);
-        transition:
-          border-color 0.25s,
-          transform 0.2s,
-          box-shadow 0.2s;
-      }
-      .contact-card:hover {
-        border-color: #3a3a40;
-        transform: translateY(-3px);
-        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
-      }
-      .contact-card-top {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        margin-bottom: 20px;
-      }
-      .contact-avatar {
-        width: 42px;
-        height: 42px;
-        background: linear-gradient(135deg, #3b3bcc, #6622cc);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-        flex-shrink: 0;
-      }
-      .contact-card-top h4 {
-        font-size: 15px;
-        font-weight: 700;
-        color: var(--white);
-      }
-      .contact-card-top p {
-        font-size: 12px;
-        color: var(--muted);
-        margin-top: 2px;
-      }
-      .contact-card-body {
-        font-size: 13.5px;
-        color: var(--muted);
-        line-height: 1.72;
-        margin-bottom: 24px;
-      }
-      .contact-btns {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-      }
-      .btn-email {
-        flex: 1;
-        min-width: 0;
-        background: var(--white);
-        color: var(--bg);
-        font-size: 13px;
-        font-weight: 700;
-        padding: 13px 16px;
-        border-radius: 10px;
-        text-align: center;
-        transition:
-          opacity 0.2s,
-          transform 0.2s;
-        display: block;
-      }
-      .btn-email:hover {
-        opacity: 0.88;
-        transform: translateY(-2px);
-      }
-      .btn-cv {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        justify-content: center;
-        background: #1e1e24;
-        border: 1px solid var(--border);
-        color: var(--cream);
-        font-size: 13px;
-        font-weight: 700;
-        padding: 13px 18px;
-        border-radius: 10px;
-        transition:
-          background 0.2s,
-          border-color 0.2s,
-          transform 0.2s;
-        white-space: nowrap;
-      }
-      .btn-cv:hover {
-        background: #28282e;
-        border-color: #4a4a50;
-        transform: translateY(-2px);
-      }
-      .btn-cv svg {
-        width: 14px;
-        height: 14px;
-        flex-shrink: 0;
-      }
-      .contact-socials {
-        display: flex;
-        justify-content: center;
-        gap: 32px;
-        margin-top: 44px;
-        flex-wrap: wrap;
-      }
-      .contact-socials a {
-        font-size: 14px;
-        color: var(--muted);
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        transition:
-          color 0.2s,
-          transform 0.2s;
-      }
-      .contact-socials a:hover {
-        color: var(--cream);
-        transform: translateY(-2px);
-      }
-      .contact-socials svg {
-        width: 11px;
-        height: 11px;
-      }
+      /* ══ EDUCATION ══ */
+      .edu-rows{display:flex;flex-direction:column;}
+      .edu-row{display:grid;grid-template-columns:120px 1fr;gap:40px;padding:28px 0;border-bottom:1px solid var(--border);align-items:start;transition:background .2s;}
+      .edu-row:last-child{border-bottom:none;}
+      .edu-year{font-size:12px;color:var(--muted);padding-top:3px;}
+      .edu-content h3{font-size:17px;font-weight:700;color:var(--white);letter-spacing:-.02em;margin-bottom:4px;}
+      .edu-content p{font-size:13px;color:var(--muted);}
+      .award-pill{display:inline-flex;align-items:center;gap:5px;margin-top:10px;background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.18);color:#fbbf24;font-size:11px;font-weight:600;padding:4px 12px;border-radius:100px;}
 
-      /* ══════════════════════════════════
-   FOOTER
-══════════════════════════════════ */
-      footer {
-        border-top: 1px solid var(--border);
-        padding: 22px 48px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      footer p {
-        font-size: 12px;
-        color: var(--muted);
-      }
+      /* ══ LEADERSHIP ══ */
+      .vol-cards{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+      .vol-card{background:var(--bg2);border-radius:18px;padding:32px;transition:background .2s,transform .2s,box-shadow .2s;}
+      .vol-card:hover{background:#1e1e24;transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,.4);}
+      .vol-org{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+      .vol-card h3{font-size:20px;font-weight:800;color:var(--white);letter-spacing:-.03em;margin-bottom:10px;}
+      .vol-card p{font-size:13px;color:var(--muted);line-height:1.75;}
 
-      /* ══════════════════════════════════
-   SCROLL REVEAL
-══════════════════════════════════ */
-      .reveal {
-        opacity: 0;
-        transform: translateY(28px);
-        transition:
-          opacity 0.65s ease,
-          transform 0.65s ease;
-      }
-      .reveal.in {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      /* ══ CONTACT ══ */
+      .sec-contact{padding:96px 48px 80px;border-top:1px solid var(--border);text-align:center;position:relative;z-index:1;}
+      .contact-title{font-size:clamp(36px,6.5vw,80px);font-weight:900;letter-spacing:-.045em;text-transform:uppercase;color:var(--cream);margin-bottom:18px;}
+      .contact-sub{font-size:16px;color:var(--cream);margin-bottom:8px;}
+      .contact-sub strong{font-weight:700;}
+      .contact-note{font-size:13.5px;color:var(--muted);margin-bottom:52px;}
+      .contact-card{max-width:520px;margin:0 auto;background:var(--bg2);border-radius:18px;padding:36px;text-align:left;border:1px solid var(--border);transition:border-color .25s,transform .2s,box-shadow .2s;}
+      .contact-card:hover{border-color:#3a3a40;transform:translateY(-3px);box-shadow:0 16px 48px rgba(0,0,0,.45);}
+      .contact-card-top{display:flex;align-items:center;gap:14px;margin-bottom:20px;}
+      .contact-avatar{width:42px;height:42px;background:linear-gradient(135deg,#3b3bcc,#6622cc);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+      .contact-card-top h4{font-size:15px;font-weight:700;color:var(--white);}
+      .contact-card-top p{font-size:12px;color:var(--muted);margin-top:2px;}
+      .contact-card-body{font-size:13.5px;color:var(--muted);line-height:1.72;margin-bottom:24px;}
+      .contact-btns{display:flex;gap:10px;flex-wrap:wrap;}
+      .btn-email{flex:1;min-width:0;background:var(--white);color:var(--bg);font-size:13px;font-weight:700;padding:13px 16px;border-radius:10px;text-align:center;transition:opacity .2s,transform .2s;display:block;}
+      .btn-email:hover{opacity:.88;transform:translateY(-2px);}
+      .btn-cv{display:inline-flex;align-items:center;gap:7px;justify-content:center;background:#1e1e24;border:1px solid var(--border);color:var(--cream);font-size:13px;font-weight:700;padding:13px 18px;border-radius:10px;transition:background .2s,border-color .2s,transform .2s;white-space:nowrap;}
+      .btn-cv:hover{background:#28282e;border-color:#4a4a50;transform:translateY(-2px);}
+      .btn-cv svg{width:14px;height:14px;flex-shrink:0;}
+      .contact-socials{display:flex;justify-content:center;gap:32px;margin-top:44px;flex-wrap:wrap;}
+      .contact-socials a{font-size:14px;color:var(--muted);display:flex;align-items:center;gap:6px;transition:color .2s,transform .2s;}
+      .contact-socials a:hover{color:var(--cream);transform:translateY(-2px);}
+      .contact-socials svg{width:11px;height:11px;}
 
-      /* ══════════════════════════════════
-   PARALLAX TARGETS
-══════════════════════════════════ */
-      .hero-name-container {
-        will-change: transform;
-        transition: transform 0.12s ease-out;
-      }
-      .hero-bottom {
-        will-change: transform, opacity;
-        transition:
-          transform 0.08s linear,
-          opacity 0.08s linear;
-      }
-      .laptop-frame {
-        will-change: transform;
-        transition:
-          transform 0.18s ease-out,
-          box-shadow 0.25s;
-      }
-      .big-title,
-      .about-headline,
-      .projects-big-title,
-      .contact-title {
-        will-change: transform, opacity;
-        transition:
-          transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-          opacity 0.55s ease;
-      }
-      .skill-group {
-        will-change: transform, opacity;
-        transition:
-          transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-          opacity 0.5s ease;
-      }
-      .vol-card {
-        will-change: transform;
-        transition:
-          transform 0.25s ease-out,
-          background 0.2s,
-          box-shadow 0.2s;
-      }
-      /* Scroll-driven pinned section line — thin progress bar at top */
-      .scroll-bar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        height: 2px;
-        width: 0%;
-        background: linear-gradient(90deg, #6366f1, #a78bfa);
-        z-index: 9999;
-        transition: width 0.1s linear;
-        pointer-events: none;
-      }
+      /* ══ FOOTER ══ */
+      footer{border-top:1px solid var(--border);padding:22px 48px;display:flex;justify-content:space-between;align-items:center;position:relative;z-index:1;}
+      footer p{font-size:12px;color:var(--muted);}
 
-      /* ══════════════════════════════════
-   MOBILE — scale same layout, don't restructure
-══════════════════════════════════ */
-      @media (max-width: 900px) {
-        .hero-nav {
-          padding: 20px 24px;
-        }
-        .nav-right {
-          gap: 20px;
-        }
-        .hero-bottom {
-          padding: 0 24px 32px;
-        }
-        .hero-bio {
-          font-size: 13px;
-          max-width: 260px;
-        }
+      /* ══ SCROLL REVEAL ══ */
+      .reveal{opacity:0;transform:translateY(28px);transition:opacity .65s ease,transform .65s ease;}
+      .reveal.in{opacity:1;transform:translateY(0);}
 
-        .sec {
-          padding: 60px 24px;
-        }
-        .big-title {
-          font-size: clamp(28px, 7vw, 54px);
-          margin-bottom: 40px;
-        }
-        .about-headline {
-          font-size: clamp(22px, 6.5vw, 48px);
-          margin-bottom: 40px;
-        }
-        .about-cols {
-          grid-template-columns: 1fr;
-          gap: 40px;
-        }
-        .about-text p {
-          font-size: 15px;
-        }
+      /* ══ WILL-CHANGE ══ */
+      .hero-name-container{will-change:transform;transition:transform .12s ease-out;}
+      .hero-bottom{will-change:transform,opacity;transition:transform .08s linear,opacity .08s linear;}
+      .laptop-frame{will-change:transform;transition:transform .18s ease-out,box-shadow .25s;}
+      .big-title,.about-headline,.projects-big-title,.contact-title{will-change:transform,opacity;transition:transform .55s cubic-bezier(.22,1,.36,1),opacity .55s ease;}
+      .skill-group{will-change:transform,opacity;transition:transform .5s cubic-bezier(.22,1,.36,1),opacity .5s ease;}
+      .vol-card{will-change:transform;transition:transform .25s ease-out,background .2s,box-shadow .2s;}
 
-        .sec-projects {
-          padding: 60px 0;
-        }
-        .projects-sub {
-          padding: 0 24px;
-          margin-bottom: 40px;
-        }
-        .projects-list {
-          padding: 0 24px;
-          gap: 16px;
-        }
-        .project-card {
-          grid-template-columns: 1fr;
-          gap: 28px;
-          padding: 26px;
-          border-radius: 14px;
-        }
-        .project-card h3 {
-          font-size: 17px;
-        }
-        .laptop-screen {
-          height: 150px;
-        }
-
-        .vol-cards {
-          grid-template-columns: 1fr;
-          gap: 14px;
-        }
-        .vol-card {
-          padding: 24px;
-          border-radius: 14px;
-        }
-        .vol-card h3 {
-          font-size: 17px;
-        }
-
-        .edu-row {
-          grid-template-columns: 88px 1fr;
-          gap: 20px;
-          padding: 22px 0;
-        }
-        .edu-content h3 {
-          font-size: 15px;
-        }
-
-        .sec-contact {
-          padding: 64px 24px 60px;
-        }
-        .contact-btns {
-          flex-direction: column;
-        }
-        .btn-email,
-        .btn-cv {
-          min-width: unset;
-          width: 100%;
-        }
-
-        footer {
-          padding: 18px 24px;
-          flex-direction: column;
-          gap: 6px;
-          text-align: center;
-        }
+      /* ══ MOBILE ══ */
+      @media(max-width:900px){
+        .hero-nav{padding:20px 24px;}.nav-right{gap:20px;}
+        .hero-bottom{padding:0 24px 32px;}.hero-bio{font-size:13px;max-width:260px;}
+        .sec{padding:60px 24px;}.big-title{font-size:clamp(28px,7vw,54px);margin-bottom:40px;}
+        .about-headline{font-size:clamp(22px,6.5vw,48px);margin-bottom:40px;}
+        .about-cols{grid-template-columns:1fr;gap:40px;}.about-text p{font-size:15px;}
+        .sec-projects{padding:60px 0;}.projects-sub{padding:0 24px;margin-bottom:40px;}
+        .projects-list{padding:0 24px;gap:16px;}
+        .project-card{grid-template-columns:1fr;gap:28px;padding:26px;border-radius:14px;}
+        .project-card h3{font-size:17px;}.laptop-screen{height:150px;}
+        .vol-cards{grid-template-columns:1fr;gap:14px;}.vol-card{padding:24px;border-radius:14px;}.vol-card h3{font-size:17px;}
+        .edu-row{grid-template-columns:88px 1fr;gap:20px;padding:22px 0;}.edu-content h3{font-size:15px;}
+        .sec-contact{padding:64px 24px 60px;}.contact-btns{flex-direction:column;}
+        .btn-email,.btn-cv{min-width:unset;width:100%;}
+        footer{padding:18px 24px;flex-direction:column;gap:6px;text-align:center;}
+        .data-ticker{display:none;}
+        .project-image-flat{height:180px;}
       }
-
-      @media (max-width: 540px) {
-        .hero-name {
-          font-size: 17vw;
-        }
-        .hero-avatar {
-          width: 130px;
-          height: 148px;
-          border-radius: 14px;
-        }
-        .avatar-emoji {
-          font-size: 52px;
-        }
-        .hero-bottom {
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 14px;
-        }
-        .hero-bio-right {
-          text-align: left;
-        }
-        .nav-btn {
-          padding: 8px 13px;
-          font-size: 10px;
-        }
-        .nav-right a {
-          font-size: 13px;
-        }
+      @media(max-width:540px){
+        .hero-name{font-size:17vw;}.hero-avatar{width:130px;height:148px;border-radius:14px;}
+        .hero-bottom{flex-direction:column;align-items:flex-start;gap:14px;}.hero-bio-right{text-align:left;}
+        .nav-btn{padding:8px 13px;font-size:10px;}.nav-right a{font-size:13px;}
       }
     </style>
   </head>
   <body>
+    <canvas id="particleCanvas"></canvas>
+    <div class="grid-overlay"></div>
+    <div class="scan-line"></div>
+    <div class="scroll-bar" id="scrollBar"></div>
     <div id="cursor"></div>
     <div id="cursorRing"></div>
 
+    <!-- DATA TICKER -->
+    <div class="data-ticker">
+      <div class="ticker-track">
+        <div class="ticker-item">Python <span>▲ active</span></div>
+        <div class="ticker-item">LangChain <span>▲ 0.3.x</span></div>
+        <div class="ticker-item">Pinecone <span>● online</span></div>
+        <div class="ticker-item">Power BI <span>▲ deployed</span></div>
+        <div class="ticker-item">Random Forest <span>● 91.2% acc</span></div>
+        <div class="ticker-item">SQL Server <span>▲ connected</span></div>
+        <div class="ticker-item">React.js <span>▲ v18</span></div>
+        <div class="ticker-item">Streamlit <span>● live</span></div>
+        <div class="ticker-item">GPA <span>3.77</span></div>
+        <div class="ticker-item">Dean's List <span>● Y2S2</span></div>
+        <!-- duplicate for seamless loop -->
+        <div class="ticker-item">Python <span>▲ active</span></div>
+        <div class="ticker-item">LangChain <span>▲ 0.3.x</span></div>
+        <div class="ticker-item">Pinecone <span>● online</span></div>
+        <div class="ticker-item">Power BI <span>▲ deployed</span></div>
+        <div class="ticker-item">Random Forest <span>● 91.2% acc</span></div>
+        <div class="ticker-item">SQL Server <span>▲ connected</span></div>
+        <div class="ticker-item">React.js <span>▲ v18</span></div>
+        <div class="ticker-item">Streamlit <span>● live</span></div>
+        <div class="ticker-item">GPA <span>3.77</span></div>
+        <div class="ticker-item">Dean's List <span>● Y2S2</span></div>
+      </div>
+    </div>
+
     <!-- ══════ HERO ══════ -->
     <section class="hero" id="hero">
-      <!-- orbs -->
       <div class="orb" id="orb1"></div>
       <div class="orb" id="orb2"></div>
       <div class="orb" id="orb3"></div>
       <div class="orb" id="orb4"></div>
       <div class="orb" id="orb5"></div>
-      <!-- sparkles -->
-      <div class="sp"></div>
-      <div class="sp"></div>
-      <div class="sp"></div>
-      <div class="sp"></div>
-      <div class="sp"></div>
-      <div class="sp"></div>
+      <div class="orb" id="orb6"></div>
+      <div class="sp"></div><div class="sp"></div><div class="sp"></div><div class="sp"></div>
+      <div class="sp"></div><div class="sp"></div><div class="sp"></div><div class="sp"></div>
+      <div class="sp"></div><div class="sp"></div>
 
-      <!-- nav -->
       <nav class="hero-nav">
         <div class="nav-left">
-          <a
-            class="nav-btn nav-btn-primary"
-            href="mailto:primeshmarasingha@gmail.com"
-            >Contact Me</a
-          >
-          <a
-            class="nav-btn nav-btn-ghost"
-            href="PrimeshMarasinghe.pdf"
-            download="PrimeshMarasinghe.pdf"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
+          <a class="nav-btn nav-btn-primary" href="mailto:primeshmarasingha@gmail.com">Contact Me</a>
+          <a class="nav-btn nav-btn-ghost" href="PrimeshMarasinghe.pdf" download="PrimeshMarasinghe.pdf">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Download CV
           </a>
+          <div class="status-pill"><div class="status-dot"></div>Available for Internships</div>
         </div>
         <div class="nav-right">
-          <a
-            href="https://linkedin.com/in/primeshmarasinghe"
-            target="_blank"
-            rel="noopener"
-            >LinkedIn</a
-          >
-          <a
-            href="https://github.com/primemarasinghe"
-            target="_blank"
-            rel="noopener"
-            >GitHub</a
-          >
+          <a href="https://linkedin.com/in/primeshmarasinghe" target="_blank" rel="noopener">LinkedIn</a>
+          <a href="https://github.com/primemarasinghe" target="_blank" rel="noopener">GitHub</a>
         </div>
       </nav>
 
-      <!-- big name + floating avatar -->
       <div class="hero-name-wrap">
         <div class="hero-name-container" id="heroNameContainer">
-          <div class="hero-name">Primesh<br />Marasinghe</div>
+          <div class="hero-name glitch" data-text="PrimeshMarasinghe">Primesh<br/>Marasinghe</div>
           <div class="hero-avatar" id="heroAvatar">
-            <img
-              src="images/2.png"
-              alt="Primesh Marasinghe"
-              class="avatar-image"
-            />
+            <img src="images/5.png" alt="Primesh Marasinghe" class="avatar-image"/>
           </div>
         </div>
       </div>
 
-      <!-- bottom bio -->
       <div class="hero-bottom">
         <div class="hero-bio">
-          I'm a
-          <strong
-            >Data Science undergraduate at
-            <a href="https://sliit.lk" target="_blank">SLIIT</a></strong
-          >, currently available for internship opportunities.
+          I'm a <strong>Data Science undergraduate at <a href="https://sliit.lk" target="_blank">SLIIT</a></strong>, currently available for internship opportunities.
         </div>
         <div class="hero-bio hero-bio-right">
-          Focused on data pipelines, dashboards &amp; machine learning,<br />studying
-          from Malabe, Sri Lanka.
+          Focused on data pipelines, dashboards &amp; machine learning,<br/>studying from Malabe, Sri Lanka.
         </div>
       </div>
     </section>
 
     <!-- ══════ ABOUT ══════ -->
     <section class="sec" id="about">
-      <h2 class="about-headline reveal">
-        I BUILD DATA PIPELINES,<br />ACCELERATE DECISIONS,<br />CREATE INSIGHTS.
-      </h2>
+      <h2 class="about-headline reveal">I BUILD DATA PIPELINES,<br/>ACCELERATE DECISIONS,<br/>CREATE INSIGHTS.</h2>
       <div class="about-cols">
         <div class="about-text reveal">
-          <p>
-            I specialize in the full journey from raw data to actionable insight
-            — designing ETL pipelines, Star Schema warehouses, and machine
-            learning models. I'm passionate about building solutions that make a
-            real difference.
-          </p>
-          <p>
-            Beyond data, I'm active in campus leadership as Design Lead at MS
-            Club of SLIIT and Design Team Co-Lead at IEEE EMBS — combining
-            analytical thinking with creative execution.
-          </p>
-          <p>
-            Seeking an internship where I can apply my skills, learn from
-            industry professionals, and grow personally and professionally while
-            contributing to meaningful projects.
-          </p>
+          <p>I specialize in the full journey from raw data to actionable insight — designing ETL pipelines, Star Schema warehouses, and machine learning models. I'm passionate about building solutions that make a real difference.</p>
+          <p>Beyond data, I'm active in campus leadership as Design Lead at MS Club of SLIIT and Design Team Co-Lead at IEEE EMBS — combining analytical thinking with creative execution.</p>
+          <p>Seeking an internship where I can apply my skills, learn from industry professionals, and grow personally and professionally while contributing to meaningful projects.</p>
         </div>
         <div class="about-skills">
-          <div class="skill-group reveal">
-            <h4>Data Engineering &amp; BI</h4>
-            <p>
-              SQL Server, SSIS, SSAS, Power BI, DAX, Excel, Star Schema, OLAP
-              Analysis, Data Warehousing.
-            </p>
-          </div>
-          <div class="skill-group reveal">
-            <h4>Data Science &amp; ML</h4>
-            <p>
-              Python, R, Scikit-learn, Pandas, LangChain, Pinecone, Streamlit,
-              HuggingFace, Groq, RAG, BeautifulSoup.
-            </p>
-          </div>
-          <div class="skill-group reveal">
-            <h4>Web &amp; App Development</h4>
-            <p>
-              React.js, Spring Boot, REST APIs, MERN, TailwindCSS, OAuth 2.0,
-              GitHub Actions, Android Studio, Java, Kotlin.
-            </p>
-          </div>
-          <div class="skill-group reveal">
-            <h4>Databases &amp; Tools</h4>
-            <p>
-              SQL, MySQL, MongoDB, Pinecone, Git, GitHub, Postman, Figma, Canva,
-              Draw.IO.
-            </p>
-          </div>
+          <div class="skill-group reveal"><h4>Data Engineering &amp; BI</h4><p>SQL Server, SSIS, SSAS, Power BI, DAX, Excel, Star Schema, OLAP Analysis, Data Warehousing.</p></div>
+          <div class="skill-group reveal"><h4>Data Science &amp; ML</h4><p>Python, R, Scikit-learn, Pandas, LangChain, Pinecone, Streamlit, HuggingFace, Groq, RAG, BeautifulSoup.</p></div>
+          <div class="skill-group reveal"><h4>Web &amp; App Development</h4><p>React.js, Spring Boot, REST APIs, MERN, TailwindCSS, OAuth 2.0, GitHub Actions, Android Studio, Java, Kotlin.</p></div>
+          <div class="skill-group reveal"><h4>Databases &amp; Tools</h4><p>SQL, MySQL, MongoDB, Pinecone, Git, GitHub, Postman, Figma, Canva, Draw.IO.</p></div>
         </div>
       </div>
     </section>
@@ -1288,474 +490,193 @@
     <!-- ══════ PROJECTS ══════ -->
     <section class="sec-projects" id="projects">
       <h2 class="projects-big-title">MYPROJECTS</h2>
-      <p class="projects-sub">
-        From market intelligence pipelines to AI-powered chatbots — every build
-        here solves a real-world problem with data and code.
-      </p>
+      <p class="projects-sub">From market intelligence pipelines to AI-powered chatbots — every build here solves a real-world problem with data and code.</p>
       <div class="projects-list">
-        <!-- P1 -->
+
+        <!-- P1 — Market Price Dashboard -->
         <div class="project-card reveal" id="pc1">
           <div>
             <div class="proj-btns">
-              <a
-                class="proj-btn proj-btn-white"
-                href="https://github.com/primemarasinghe"
-                target="_blank"
-                title="GitHub"
-                ><svg viewBox="0 0 24 24" fill="currentColor">
-                  <path
-                    d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"
-                  /></svg
-              ></a>
-              <a class="proj-btn proj-btn-dark" href="#" title="Live"
-                ><svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path
-                    d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"
-                  />
-                  <path
-                    d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"
-                  /></svg
-              ></a>
+              <a class="proj-btn proj-btn-white" href="https://github.com/primemarasinghe" target="_blank" title="GitHub"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg></a>
+              <a class="proj-btn proj-btn-dark" href="#" title="Live"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></a>
             </div>
             <h3>Sri Lankan Market Price Intelligence Platform</h3>
-            <p>
-              Automated data pipeline collecting Sri Lankan retail commodity
-              prices into a SQL Server Star Schema warehouse with daily
-              auto-refresh, delivering an interactive Power BI dashboard with
-              trend analysis and KPI monitoring.
-            </p>
-            <div class="project-tags">
-              <span>Python</span><span>BeautifulSoup</span
-              ><span>SQL Server</span><span>Power BI</span>
-            </div>
+            <p>Automated data pipeline collecting Sri Lankan retail commodity prices into a SQL Server Star Schema warehouse with daily auto-refresh, delivering an interactive Power BI dashboard with trend analysis and KPI monitoring.</p>
+            <div class="project-tags"><span>Python</span><span>BeautifulSoup</span><span>SQL Server</span><span>Power BI</span></div>
           </div>
-          <div class="laptop-mock">
-            <div class="laptop-frame">
-              <div class="laptop-screen sc-blue">
-                <div class="screen-inner">
-                  <span style="font-size: 32px">📊</span
-                  ><span class="screen-title">Market Price Dashboard</span
-                  ><span class="screen-sub"
-                    >Power BI · SQL Server · Python</span
-                  >
+          <div class="proj-visual">
+            <div class="laptop-mock">
+              <div class="laptop-frame">
+                <div class="laptop-screen sc-blue">
+                  <div class="screen-inner"><span style="font-size:32px">📊</span><span class="screen-title">Market Price Dashboard</span><span class="screen-sub">Power BI · SQL Server · Python</span></div>
                 </div>
               </div>
+              <div class="laptop-base"></div><div class="laptop-foot"></div>
             </div>
-            <div class="laptop-base"></div>
-            <div class="laptop-foot"></div>
           </div>
         </div>
 
-        <!-- P2 -->
+        <!-- P2 — MediBOT -->
         <div class="project-card reveal" id="pc2">
           <div>
             <div class="proj-btns">
-              <a
-                class="proj-btn proj-btn-white"
-                href="https://github.com/primemarasinghe"
-                target="_blank"
-                title="GitHub"
-                ><svg viewBox="0 0 24 24" fill="currentColor">
-                  <path
-                    d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"
-                  /></svg
-              ></a>
-              <a class="proj-btn proj-btn-dark" href="#" title="Live"
-                ><svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path
-                    d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"
-                  />
-                  <path
-                    d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"
-                  /></svg
-              ></a>
+              <a class="proj-btn proj-btn-white" href="https://github.com/primemarasinghe" target="_blank" title="GitHub"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg></a>
+              <a class="proj-btn proj-btn-dark" href="#" title="Live"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></a>
             </div>
             <h3>MediBOT AI — RAG Medical Chatbot</h3>
-            <p>
-              Medical Q&A chatbot using Retrieval-Augmented Generation. Document
-              ingestion, chunking, embedding &amp; vector search pipelines with
-              LangChain and Pinecone, powered by Llama 3.3 70B via Groq,
-              deployed on Streamlit Cloud.
-            </p>
-            <div class="project-tags">
-              <span>Python</span><span>LangChain</span><span>Pinecone</span
-              ><span>Groq</span><span>Streamlit</span>
-            </div>
+            <p>Medical Q&A chatbot using Retrieval-Augmented Generation. Document ingestion, chunking, embedding &amp; vector search pipelines with LangChain and Pinecone, powered by Llama 3.3 70B via Groq, deployed on Streamlit Cloud.</p>
+            <div class="project-tags"><span>Python</span><span>LangChain</span><span>Pinecone</span><span>Groq</span><span>Streamlit</span></div>
           </div>
-          <div class="laptop-mock">
-            <div class="laptop-frame">
-              <div class="laptop-screen sc-purple">
-                <div class="screen-inner">
-                  <span style="font-size: 32px">🤖</span
-                  ><span class="screen-title">MediBOT AI</span
-                  ><span class="screen-sub">RAG · LangChain · Pinecone</span>
+          <div class="proj-visual">
+            <div class="laptop-mock">
+              <div class="laptop-frame">
+                <div class="laptop-screen sc-purple">
+                  <div class="screen-inner"><span style="font-size:32px">🤖</span><span class="screen-title">MediBOT AI</span><span class="screen-sub">RAG · LangChain · Pinecone</span></div>
                 </div>
               </div>
+              <div class="laptop-base"></div><div class="laptop-foot"></div>
             </div>
-            <div class="laptop-base"></div>
-            <div class="laptop-foot"></div>
           </div>
         </div>
 
-        <!-- P3 -->
+        <!-- P3 — IPL Predictor -->
         <div class="project-card reveal" id="pc3">
           <div>
             <div class="proj-btns">
-              <a
-                class="proj-btn proj-btn-white"
-                href="https://github.com/primemarasinghe"
-                target="_blank"
-                title="GitHub"
-                ><svg viewBox="0 0 24 24" fill="currentColor">
-                  <path
-                    d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"
-                  /></svg
-              ></a>
-              <a class="proj-btn proj-btn-dark" href="#" title="Live"
-                ><svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path
-                    d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"
-                  />
-                  <path
-                    d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"
-                  /></svg
-              ></a>
+              <a class="proj-btn proj-btn-white" href="https://github.com/primemarasinghe/ipl-winner-predictor" target="_blank" title="GitHub"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg></a>
+              <a class="proj-btn proj-btn-dark" href="#" title="Live"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></a>
             </div>
             <h3>IPL Match Winner Predictor</h3>
-            <p>
-              ML system predicting IPL match outcomes from 2008–2020 historical
-              data using Random Forest and Logistic Regression, with feature
-              engineering on team performance history and an interactive
-              Streamlit web app deployment.
-            </p>
-            <div class="project-tags">
-              <span>Python</span><span>Scikit-learn</span><span>Pandas</span
-              ><span>Streamlit</span>
-            </div>
+            <p>ML system predicting IPL match outcomes from 2008–2020 historical data using Random Forest and Logistic Regression, with feature engineering on team performance history and an interactive Streamlit web app deployment.</p>
+            <div class="project-tags"><span>Python</span><span>Scikit-learn</span><span>Pandas</span><span>Streamlit</span></div>
           </div>
-          <div class="laptop-mock">
-            <div class="laptop-frame">
-              <div class="laptop-screen sc-green">
-                <div class="screen-inner">
-                  <span style="font-size: 32px">🏏</span
-                  ><span class="screen-title">IPL Predictor</span
-                  ><span class="screen-sub">Random Forest · Streamlit</span>
+          <div class="proj-visual">
+            <div class="laptop-mock">
+              <div class="laptop-frame">
+                <div class="laptop-screen sc-green">
+                  <div class="screen-inner"><span style="font-size:32px">🏏</span><span class="screen-title">IPL Predictor</span><span class="screen-sub">Random Forest · Streamlit</span></div>
                 </div>
               </div>
+              <div class="laptop-base"></div><div class="laptop-foot"></div>
             </div>
-            <div class="laptop-base"></div>
-            <div class="laptop-foot"></div>
           </div>
         </div>
 
-        <!-- P4 -->
+        <!-- P4 — UK Road Accident BI -->
         <div class="project-card reveal" id="pc4">
           <div>
             <div class="proj-btns">
-              <a
-                class="proj-btn proj-btn-white"
-                href="https://github.com/primemarasinghe"
-                target="_blank"
-                title="GitHub"
-                ><svg viewBox="0 0 24 24" fill="currentColor">
-                  <path
-                    d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"
-                  /></svg
-              ></a>
-              <a class="proj-btn proj-btn-dark" href="#" title="Live"
-                ><svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path
-                    d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"
-                  />
-                  <path
-                    d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"
-                  /></svg
-              ></a>
+              <a class="proj-btn proj-btn-white" href="https://github.com/primemarasinghe" target="_blank" title="GitHub"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg></a>
+              <a class="proj-btn proj-btn-dark" href="#" title="Live"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></a>
             </div>
             <h3>UK Road Accident BI Solution</h3>
-            <p>
-              End-to-end BI solution on UK road accident data — Star Schema with
-              Slowly Changing Dimensions, SSIS ETL pipelines, SSAS OLAP cubes,
-              and interactive Power BI dashboards with drill-down and
-              slice-and-dice.
-            </p>
-            <div class="project-tags">
-              <span>SQL Server</span><span>SSIS</span><span>SSAS</span
-              ><span>Power BI</span>
-            </div>
+            <p>End-to-end BI solution on UK road accident data — Star Schema with Slowly Changing Dimensions, SSIS ETL pipelines, SSAS OLAP cubes, and interactive Power BI dashboards with drill-down and slice-and-dice.</p>
+            <div class="project-tags"><span>SQL Server</span><span>SSIS</span><span>SSAS</span><span>Power BI</span></div>
           </div>
-          <div class="laptop-mock">
-            <div class="laptop-frame">
-              <div class="laptop-screen sc-red">
-                <div class="screen-inner">
-                  <span style="font-size: 32px">🚦</span
-                  ><span class="screen-title">Road Accident BI</span
-                  ><span class="screen-sub">SSAS · SSIS · Power BI</span>
+          <div class="proj-visual">
+            <div class="laptop-mock">
+              <div class="laptop-frame">
+                <div class="laptop-screen sc-red">
+                  <div class="screen-inner"><span style="font-size:32px">🚦</span><span class="screen-title">Road Accident BI</span><span class="screen-sub">SSAS · SSIS · Power BI</span></div>
                 </div>
               </div>
+              <div class="laptop-base"></div><div class="laptop-foot"></div>
             </div>
-            <div class="laptop-base"></div>
-            <div class="laptop-foot"></div>
           </div>
         </div>
 
-        <!-- P5 -->
+        <!-- P5 — Smart Campus Hub -->
         <div class="project-card reveal" id="pc5">
           <div>
             <div class="proj-btns">
-              <a
-                class="proj-btn proj-btn-white"
-                href="https://github.com/primemarasinghe"
-                target="_blank"
-                title="GitHub"
-                ><svg viewBox="0 0 24 24" fill="currentColor">
-                  <path
-                    d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"
-                  /></svg
-              ></a>
-              <a class="proj-btn proj-btn-dark" href="#" title="Live"
-                ><svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path
-                    d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"
-                  />
-                  <path
-                    d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"
-                  /></svg
-              ></a>
+              <a class="proj-btn proj-btn-white" href="https://github.com/primemarasinghe" target="_blank" title="GitHub"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg></a>
+              <a class="proj-btn proj-btn-dark" href="#" title="Live"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></a>
             </div>
             <h3>Northbridge Smart Campus Hub</h3>
-            <p>
-              Centralized campus management system with role-based access for
-              students, lecturers, and admins. Smart resource booking, incident
-              ticketing, conflict prevention, and CI/CD pipeline via GitHub
-              Actions.
-            </p>
-            <div class="project-tags">
-              <span>Spring Boot</span><span>React.js</span><span>OAuth 2.0</span
-              ><span>GitHub Actions</span>
-            </div>
+            <p>Centralized campus management system with role-based access for students, lecturers, and admins. Smart resource booking, incident ticketing, conflict prevention, and CI/CD pipeline via GitHub Actions.</p>
+            <div class="project-tags"><span>Spring Boot</span><span>React.js</span><span>OAuth 2.0</span><span>GitHub Actions</span></div>
           </div>
-          <div class="laptop-mock">
-            <div class="laptop-frame">
-              <div class="laptop-screen sc-teal">
-                <div class="screen-inner">
-                  <span style="font-size: 32px">🏫</span
-                  ><span class="screen-title">Smart Campus Hub</span
-                  ><span class="screen-sub">Spring Boot · React.js</span>
+          <div class="proj-visual">
+            <div class="laptop-mock">
+              <div class="laptop-frame">
+                <div class="laptop-screen sc-teal">
+                  <div class="screen-inner"><span style="font-size:32px">🏛️</span><span class="screen-title">Smart Campus Hub</span><span class="screen-sub">Spring Boot · React · OAuth</span></div>
                 </div>
               </div>
+              <div class="laptop-base"></div><div class="laptop-foot"></div>
             </div>
-            <div class="laptop-base"></div>
-            <div class="laptop-foot"></div>
           </div>
         </div>
 
-        <!-- P6 -->
+        <!-- P6 — Statistical Modelling -->
         <div class="project-card reveal" id="pc6">
           <div>
             <div class="proj-btns">
-              <a
-                class="proj-btn proj-btn-white"
-                href="https://github.com/primemarasinghe"
-                target="_blank"
-                title="GitHub"
-                ><svg viewBox="0 0 24 24" fill="currentColor">
-                  <path
-                    d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"
-                  /></svg
-              ></a>
-              <a class="proj-btn proj-btn-dark" href="#" title="Live"
-                ><svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path
-                    d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"
-                  />
-                  <path
-                    d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"
-                  /></svg
-              ></a>
+              <a class="proj-btn proj-btn-white" href="https://github.com/primemarasinghe" target="_blank" title="GitHub"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg></a>
+              <a class="proj-btn proj-btn-dark" href="#" title="Live"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></a>
             </div>
             <h3>Statistical Modelling — Learning &amp; Communication</h3>
-            <p>
-              Research study analyzing the relationship between collaborative
-              learning and communication skills, using Pearson correlation,
-              linear regression, EDA, and full residual analysis visualized in
-              R.
-            </p>
-            <div class="project-tags">
-              <span>R</span><span>Statistical Analysis</span><span>EDA</span
-              ><span>Data Visualization</span>
-            </div>
+            <p>Research study analyzing the relationship between collaborative learning and communication skills, using Pearson correlation, linear regression, EDA, and full residual analysis visualized in R.</p>
+            <div class="project-tags"><span>R</span><span>Statistical Analysis</span><span>EDA</span><span>Data Visualization</span></div>
           </div>
-          <div class="laptop-mock">
-            <div class="laptop-frame">
-              <div class="laptop-screen sc-indigo">
-                <div class="screen-inner">
-                  <span style="font-size: 32px">📈</span
-                  ><span class="screen-title">Statistical Modelling</span
-                  ><span class="screen-sub">R · Pearson · Regression</span>
+          <div class="proj-visual">
+            <div class="laptop-mock">
+              <div class="laptop-frame">
+                <div class="laptop-screen sc-indigo">
+                  <div class="screen-inner"><span style="font-size:32px">📈</span><span class="screen-title">Statistical Modelling</span><span class="screen-sub">R · Pearson · Regression</span></div>
                 </div>
               </div>
+              <div class="laptop-base"></div><div class="laptop-foot"></div>
             </div>
-            <div class="laptop-base"></div>
-            <div class="laptop-foot"></div>
           </div>
         </div>
 
-        <!-- P7 -->
+        <!-- P7 — PurePortion -->
         <div class="project-card reveal" id="pc7">
           <div>
             <div class="proj-btns">
-              <a
-                class="proj-btn proj-btn-white"
-                href="https://github.com/primemarasinghe"
-                target="_blank"
-                title="GitHub"
-                ><svg viewBox="0 0 24 24" fill="currentColor">
-                  <path
-                    d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"
-                  /></svg
-              ></a>
-              <a class="proj-btn proj-btn-dark" href="#" title="Live"
-                ><svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path
-                    d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"
-                  />
-                  <path
-                    d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"
-                  /></svg
-              ></a>
+              <a class="proj-btn proj-btn-white" href="https://github.com/primemarasinghe" target="_blank" title="GitHub"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg></a>
+              <a class="proj-btn proj-btn-dark" href="#" title="Live"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></a>
             </div>
             <h3>PurePortion — Food Waste Analytics</h3>
-            <p>
-              MERN-stack smart meal planning app reducing food waste via
-              inventory tracking with expiry alerts, portion calculation,
-              expense reporting, and AI-powered recipe suggestions with full
-              financial reporting.
-            </p>
-            <div class="project-tags">
-              <span>MERN</span><span>TailwindCSS</span><span>REST APIs</span>
-            </div>
+            <p>MERN-stack smart meal planning app reducing food waste via inventory tracking with expiry alerts, portion calculation, expense reporting, and AI-powered recipe suggestions with full financial reporting.</p>
+            <div class="project-tags"><span>MERN</span><span>TailwindCSS</span><span>REST APIs</span></div>
           </div>
-          <div class="laptop-mock">
-            <div class="laptop-frame">
-              <div class="laptop-screen sc-amber">
-                <div class="screen-inner">
-                  <span style="font-size: 32px">🥗</span
-                  ><span class="screen-title">PurePortion</span
-                  ><span class="screen-sub">MERN · TailwindCSS</span>
+          <div class="proj-visual">
+            <div class="laptop-mock">
+              <div class="laptop-frame">
+                <div class="laptop-screen sc-amber">
+                  <div class="screen-inner"><span style="font-size:32px">🥗</span><span class="screen-title">PurePortion</span><span class="screen-sub">MERN · Tailwind · REST</span></div>
                 </div>
               </div>
+              <div class="laptop-base"></div><div class="laptop-foot"></div>
             </div>
-            <div class="laptop-base"></div>
-            <div class="laptop-foot"></div>
           </div>
         </div>
 
-        <!-- P8 -->
+        <!-- P8 — PRIME Wellness -->
         <div class="project-card reveal" id="pc8">
           <div>
             <div class="proj-btns">
-              <a
-                class="proj-btn proj-btn-white"
-                href="https://github.com/primemarasinghe"
-                target="_blank"
-                title="GitHub"
-                ><svg viewBox="0 0 24 24" fill="currentColor">
-                  <path
-                    d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"
-                  /></svg
-              ></a>
-              <a class="proj-btn proj-btn-dark" href="#" title="Live"
-                ><svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path
-                    d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"
-                  />
-                  <path
-                    d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"
-                  /></svg
-              ></a>
+              <a class="proj-btn proj-btn-white" href="https://github.com/primemarasinghe" target="_blank" title="GitHub"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg></a>
+              <a class="proj-btn proj-btn-dark" href="#" title="Live"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></a>
             </div>
             <h3>PRIME — Mobile Wellness Tracker</h3>
-            <p>
-              Android application for daily habit tracking, mood journaling,
-              hydration reminders, and customizable notifications — built with a
-              smooth, responsive mobile UI/UX in Android Studio using Java and
-              Kotlin.
-            </p>
-            <div class="project-tags">
-              <span>Android Studio</span><span>Java</span><span>Kotlin</span>
-            </div>
+            <p>Android application for daily habit tracking, mood journaling, hydration reminders, and customizable notifications — built with a smooth, responsive mobile UI/UX in Android Studio using Java and Kotlin.</p>
+            <div class="project-tags"><span>Android Studio</span><span>Java</span><span>Kotlin</span></div>
           </div>
-          <div class="laptop-mock">
-            <div class="laptop-frame">
-              <div class="laptop-screen sc-pink">
-                <div class="screen-inner">
-                  <span style="font-size: 32px">💪</span
-                  ><span class="screen-title">PRIME Wellness</span
-                  ><span class="screen-sub">Android · Java · Kotlin</span>
+          <div class="proj-visual">
+            <div class="laptop-mock">
+              <div class="laptop-frame">
+                <div class="laptop-screen sc-pink">
+                  <div class="screen-inner"><span style="font-size:32px">💪</span><span class="screen-title">PRIME Wellness</span><span class="screen-sub">Android · Java · Kotlin</span></div>
                 </div>
               </div>
+              <div class="laptop-base"></div><div class="laptop-foot"></div>
             </div>
-            <div class="laptop-base"></div>
-            <div class="laptop-foot"></div>
           </div>
         </div>
+
       </div>
     </section>
 
@@ -1768,9 +689,7 @@
           <div class="edu-content">
             <h3>BSc (Hons) Information Technology — Data Science</h3>
             <p>Sri Lanka Institute of Information Technology (SLIIT)</p>
-            <div class="award-pill">
-              🏆 Dean's List · GPA 3.77 · Year 2 Semester 2
-            </div>
+            <div class="award-pill">🏆 Dean's List · GPA 3.77 · Year 2 Semester 2</div>
           </div>
         </div>
         <div class="edu-row reveal">
@@ -1797,23 +716,12 @@
         <div class="vol-card reveal">
           <div class="vol-org">MS Club of SLIIT · 2026 – Present</div>
           <h3>Design Lead</h3>
-          <p>
-            Leading branding, media, and design across club events since March
-            2025. Served as UI Mentor for the Mini Hackathon, guiding
-            participants on interface design principles and creative
-            problem-solving.
-          </p>
+          <p>Leading branding, media, and design across club events since March 2025. Served as UI Mentor for the Mini Hackathon, guiding participants on interface design principles and creative problem-solving.</p>
         </div>
         <div class="vol-card reveal">
-          <div class="vol-org">
-            IEEE Engineering in Medicine &amp; Biology Society · SLIIT · 2025
-          </div>
+          <div class="vol-org">IEEE Engineering in Medicine &amp; Biology Society · SLIIT · 2025</div>
           <h3>Design Team Co-Lead</h3>
-          <p>
-            Co-led the design team for Cell Spell 2025, contributing to the
-            planning and execution of creative design initiatives for the annual
-            flagship event.
-          </p>
+          <p>Co-led the design team for Cell Spell 2025, contributing to the planning and execution of creative design initiatives for the annual flagship event.</p>
         </div>
       </div>
     </section>
@@ -1821,85 +729,25 @@
     <!-- ══════ CONTACT ══════ -->
     <section class="sec-contact" id="contact">
       <h2 class="contact-title">LET'S CONNECT.</h2>
-      <p class="contact-sub">
-        I'm <strong>Primesh Marasinghe</strong>, a Data Science undergraduate
-        seeking internships.
-      </p>
-      <p class="contact-note">
-        Open to internships, collaborations, and data conversations. Based in
-        Malabe, Sri Lanka.
-      </p>
+      <p class="contact-sub">I'm <strong>Primesh Marasinghe</strong>, a Data Science undergraduate seeking internships.</p>
+      <p class="contact-note">Open to internships, collaborations, and data conversations. Based in Malabe, Sri Lanka.</p>
       <div class="contact-card reveal">
         <div class="contact-card-top">
           <div class="contact-avatar">📊</div>
-          <div>
-            <h4>Primesh Marasinghe</h4>
-            <p>Data Science Undergraduate · SLIIT</p>
-          </div>
+          <div><h4>Primesh Marasinghe</h4><p>Data Science Undergraduate · SLIIT</p></div>
         </div>
-        <div class="contact-card-body">
-          I'm open to internship opportunities, research collaborations, and
-          interesting data problems. Feel free to reach out — I'd love to
-          connect.
-        </div>
+        <div class="contact-card-body">I'm open to internship opportunities, research collaborations, and interesting data problems. Feel free to reach out — I'd love to connect.</div>
         <div class="contact-btns">
-          <a class="btn-email" href="mailto:primeshmarasingha@gmail.com"
-            >primeshmarasingha@gmail.com</a
-          >
-          <a
-            class="btn-cv"
-            href="PrimeshMarasinghe.pdf"
-            download="PrimeshMarasinghe.pdf"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
+          <a class="btn-email" href="mailto:primeshmarasingha@gmail.com">primeshmarasingha@gmail.com</a>
+          <a class="btn-cv" href="PrimeshMarasinghe.pdf" download="PrimeshMarasinghe.pdf">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Download CV
           </a>
         </div>
       </div>
       <div class="contact-socials">
-        <a
-          href="https://linkedin.com/in/primeshmarasinghe"
-          target="_blank"
-          rel="noopener"
-        >
-          LinkedIn
-          <svg viewBox="0 0 12 12" fill="none">
-            <path
-              d="M2.5 2.5L9.5 9.5M9.5 2.5H2.5V9.5"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </a>
-        <a
-          href="https://github.com/primemarasinghe"
-          target="_blank"
-          rel="noopener"
-        >
-          GitHub
-          <svg viewBox="0 0 12 12" fill="none">
-            <path
-              d="M2.5 2.5L9.5 9.5M9.5 2.5H2.5V9.5"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </a>
+        <a href="https://linkedin.com/in/primeshmarasinghe" target="_blank" rel="noopener">LinkedIn<svg viewBox="0 0 12 12" fill="none"><path d="M2.5 2.5L9.5 9.5M9.5 2.5H2.5V9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        <a href="https://github.com/primemarasinghe" target="_blank" rel="noopener">GitHub<svg viewBox="0 0 12 12" fill="none"><path d="M2.5 2.5L9.5 9.5M9.5 2.5H2.5V9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
       </div>
     </section>
 
@@ -1909,279 +757,258 @@
     </footer>
 
     <script>
-      (function () {
-        "use strict";
+    (function(){
+      "use strict";
 
-        /* ── Custom cursor (desktop only) ── */
-        const isMouse = window.matchMedia(
-          "(hover:hover) and (pointer:fine)",
-        ).matches;
-        const cur = document.getElementById("cursor");
-        const ring = document.getElementById("cursorRing");
-        if (!isMouse) {
-          cur.style.display = "none";
-          ring.style.display = "none";
-        } else {
-          let mx = 0,
-            my = 0,
-            rx = 0,
-            ry = 0;
-          document.addEventListener("mousemove", (e) => {
-            mx = e.clientX;
-            my = e.clientY;
-            cur.style.left = mx + "px";
-            cur.style.top = my + "px";
-          });
-          (function tick() {
-            rx += (mx - rx) * 0.12;
-            ry += (my - ry) * 0.12;
-            ring.style.left = rx + "px";
-            ring.style.top = ry + "px";
-            requestAnimationFrame(tick);
-          })();
-          document
-            .querySelectorAll('a,button,[class*="btn"],[class*="card"]')
-            .forEach((el) => {
-              el.addEventListener("mouseenter", () =>
-                document.body.classList.add("cursor-hover"),
-              );
-              el.addEventListener("mouseleave", () =>
-                document.body.classList.remove("cursor-hover"),
-              );
-            });
+      /* ── Scroll progress bar ── */
+      const scrollBar = document.getElementById('scrollBar');
+      function updateScrollBar(){
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        scrollBar.style.width = (window.scrollY / max * 100) + '%';
+      }
+      window.addEventListener('scroll', updateScrollBar, {passive:true});
+
+      /* ── Particle system ── */
+      const canvas = document.getElementById('particleCanvas');
+      const ctx = canvas.getContext('2d');
+      let W, H;
+      function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
+      resize();
+      window.addEventListener('resize', resize);
+
+      const PARTICLE_COUNT = 55;
+      const particles = [];
+      class Particle{
+        constructor(){this.reset(true);}
+        reset(init=false){
+          this.x = Math.random()*W;
+          this.y = init ? Math.random()*H : H+10;
+          this.vx = (Math.random()-.5)*0.3;
+          this.vy = -(Math.random()*0.6+0.15);
+          this.size = Math.random()*1.8+0.4;
+          this.life = 0;
+          this.maxLife = Math.random()*300+200;
+          this.type = Math.random()<0.6 ? 'dot' : 'cross';
+          this.color = Math.random()<0.5 ? [99,102,241] : [167,139,250];
         }
-
-        /* ── Hero: orb parallax on mouse move ── */
-        const hero = document.getElementById("hero");
-        const orbData = [
-          { el: document.getElementById("orb1"), dx: -0.028, dy: -0.022 },
-          { el: document.getElementById("orb2"), dx: 0.022, dy: -0.016 },
-          { el: document.getElementById("orb3"), dx: -0.016, dy: 0.026 },
-          { el: document.getElementById("orb4"), dx: 0.032, dy: 0.02 },
-          { el: document.getElementById("orb5"), dx: -0.022, dy: -0.028 },
-        ];
-        if (isMouse) {
-          hero.addEventListener("mousemove", (e) => {
-            const r = hero.getBoundingClientRect();
-            const cx = e.clientX - r.left - r.width / 2;
-            const cy = e.clientY - r.top - r.height / 2;
-            orbData.forEach((o) => {
-              o.el.style.transform = `translate(${cx * o.dx}px,${cy * o.dy}px)`;
-            });
-          });
-          hero.addEventListener("mouseleave", () => {
-            orbData.forEach((o) => (o.el.style.transform = ""));
-          });
+        update(){
+          this.x+=this.vx; this.y+=this.vy;
+          this.life++;
+          if(this.life>this.maxLife||this.y<-20) this.reset();
         }
-
-        /* ── Hero: 3D tilt on name + avatar ── */
-        const nameWrap = document.getElementById("heroNameContainer");
-        const avatar = document.getElementById("heroAvatar");
-        if (isMouse) {
-          hero.addEventListener("mousemove", (e) => {
-            const r = hero.getBoundingClientRect();
-            const nx = ((e.clientX - r.left) / r.width - 0.5) * 2;
-            const ny = ((e.clientY - r.top) / r.height - 0.5) * 2;
-            nameWrap.style.transform = `perspective(900px) rotateY(${nx * 7}deg) rotateX(${-ny * 4.5}deg)`;
-            avatar.style.transform = `translate(-50%,-50%) translateZ(70px) rotateY(${-nx * 4}deg) rotateX(${ny * 3}deg)`;
-          });
-          hero.addEventListener("mouseleave", () => {
-            nameWrap.style.transform = "";
-            avatar.style.transform = "translate(-50%,-50%) translateZ(50px)";
-          });
-        }
-
-        /* ── Project cards: 3D tilt on hover ── */
-        if (isMouse) {
-          document.querySelectorAll(".project-card").forEach((card) => {
-            card.addEventListener("mousemove", (e) => {
-              const r = card.getBoundingClientRect();
-              const cx = (e.clientX - r.left) / r.width - 0.5;
-              const cy = (e.clientY - r.top) / r.height - 0.5;
-              card.style.transform = `perspective(1100px) rotateY(${cx * 9}deg) rotateX(${-cy * 6}deg) translateZ(6px)`;
-            });
-            card.addEventListener("mouseleave", () => {
-              card.style.transform =
-                "perspective(1100px) rotateY(0deg) rotateX(0deg) translateZ(0)";
-              card.style.transition =
-                "transform .5s ease,background .25s,box-shadow .25s";
-              setTimeout(() => (card.style.transition = ""), 500);
-            });
-          });
-        }
-
-        /* ── Scroll reveal ── */
-        const io = new IntersectionObserver(
-          (entries) => {
-            entries.forEach((e) => {
-              if (e.isIntersecting) {
-                e.target.classList.add("in");
-                io.unobserve(e.target);
-              }
-            });
-          },
-          { threshold: 0.1 },
-        );
-        document.querySelectorAll(".reveal").forEach((el, i) => {
-          el.style.transitionDelay = (i % 4) * 0.07 + "s";
-          io.observe(el);
-        });
-
-        /* ── Parallax scroll system ── */
-        // Hero name drifts up slower than scroll (feels like it's "behind")
-        const heroName = document.getElementById("heroNameContainer");
-        const heroAv = document.getElementById("heroAvatar");
-        const heroBottom = document.querySelector(".hero-bottom");
-        const orb1 = document.getElementById("orb1");
-        const orb2 = document.getElementById("orb2");
-        const orb3 = document.getElementById("orb3");
-        const orb4 = document.getElementById("orb4");
-        const orb5 = document.getElementById("orb5");
-
-        // Section headings slide in from left/right as you scroll
-        const bigTitles = document.querySelectorAll(
-          ".big-title, .about-headline, .projects-big-title, .contact-title",
-        );
-        bigTitles.forEach((el, i) => {
-          el.style.willChange = "transform, opacity";
-        });
-
-        // Laptop mocks shift upward slightly as section enters viewport
-        const laptops = document.querySelectorAll(".laptop-frame");
-
-        // About skills slide in from right
-        const skillGroups = document.querySelectorAll(".skill-group");
-
-        // Vol cards drift up at different speeds
-        const volCards = document.querySelectorAll(".vol-card");
-
-        let ticking = false;
-        let lastScroll = 0;
-        let heroHeight = hero.offsetHeight;
-
-        function onScroll() {
-          lastScroll = window.scrollY;
-          if (!ticking) {
-            requestAnimationFrame(applyParallax);
-            ticking = true;
+        draw(){
+          const alpha = Math.sin(this.life/this.maxLife*Math.PI)*0.7;
+          const [r,g,b] = this.color;
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = `rgb(${r},${g},${b})`;
+          if(this.type==='dot'){
+            ctx.beginPath();
+            ctx.arc(this.x,this.y,this.size,0,Math.PI*2);
+            ctx.fill();
+          } else {
+            ctx.strokeStyle = `rgb(${r},${g},${b})`;
+            ctx.lineWidth = 0.8;
+            const s = this.size*1.8;
+            ctx.beginPath();
+            ctx.moveTo(this.x-s,this.y); ctx.lineTo(this.x+s,this.y);
+            ctx.moveTo(this.x,this.y-s); ctx.lineTo(this.x,this.y+s);
+            ctx.stroke();
           }
         }
+      }
+      for(let i=0;i<PARTICLE_COUNT;i++) particles.push(new Particle());
 
-        function applyParallax() {
-          const s = lastScroll;
-          ticking = false;
-
-          // ── Hero layers (only while hero is in view) ──
-          if (s < heroHeight * 1.2) {
-            // Name drifts up at 35% of scroll speed
-            const nameY = s * 0.35;
-            // Use existing mouse-tilt if present; just add scroll Y offset
-            const currentTransform = heroName.style.transform;
-            const hasTilt = currentTransform.includes("perspective");
-            if (!hasTilt) {
-              heroName.style.transform = `translateY(${-nameY}px)`;
-            }
-
-            // Avatar moves up faster (60%) — pops "forward"
-            const avY = s * 0.55;
-            const avTilt = heroAv.style.transform;
-            if (!avTilt.includes("rotateY")) {
-              heroAv.style.transform = `translate(-50%, calc(-50% - ${avY * 0.3}px)) translateZ(50px)`;
-            }
-
-            // Hero bottom bio fades & slides up quickly
-            const bioProgress = Math.min(s / (heroHeight * 0.5), 1);
-            if (heroBottom) {
-              heroBottom.style.transform = `translateY(${-s * 0.18}px)`;
-              heroBottom.style.opacity = Math.max(1 - bioProgress * 1.4, 0);
-            }
-
-            // Orbs drift at different parallax rates (independent of mouse)
-            // Only modify when no mouse parallax active
-            if (!isMouse) {
-              orb1.style.transform = `translateY(${s * 0.12}px)`;
-              orb2.style.transform = `translateY(${s * -0.08}px)`;
-              orb3.style.transform = `translateY(${s * 0.06}px)`;
-              orb4.style.transform = `translateY(${s * 0.15}px)`;
-              orb5.style.transform = `translateY(${s * -0.1}px)`;
-            } else {
-              // Blend scroll parallax into mouse parallax via CSS var
-              orb1.style.marginTop = `${s * 0.1}px`;
-              orb2.style.marginTop = `${s * -0.06}px`;
-              orb3.style.marginTop = `${s * 0.05}px`;
-            }
-          }
-
-          // ── Big section titles: slide in from left on scroll ──
-          bigTitles.forEach((el) => {
-            const rect = el.getBoundingClientRect();
-            const wh = window.innerHeight;
-            if (rect.top < wh && rect.bottom > 0) {
-              // progress 0 (title at bottom of viewport) → 1 (title at top)
-              const prog = 1 - Math.max(0, Math.min(rect.top / (wh * 0.72), 1));
-              const xOff = (1 - prog) * -60; // slides in from left
-              const op = Math.min(prog * 1.6, 1);
-              el.style.transform = `translateX(${xOff}px)`;
-              el.style.opacity = op;
-            }
-          });
-
-          // ── Laptop mocks: subtle upward float as card scrolls into view ──
-          laptops.forEach((lp) => {
-            const rect = lp.getBoundingClientRect();
-            const wh = window.innerHeight;
-            if (rect.top < wh && rect.bottom > 0) {
-              const prog = 1 - Math.max(0, Math.min(rect.top / wh, 1));
-              lp.style.transform = `translateY(${(1 - prog) * 22}px)`;
-            }
-          });
-
-          // ── Skill groups: staggered slide in from right ──
-          skillGroups.forEach((sg, i) => {
-            const rect = sg.getBoundingClientRect();
-            const wh = window.innerHeight;
-            if (rect.top < wh && rect.bottom > 0) {
-              const prog = 1 - Math.max(0, Math.min(rect.top / (wh * 0.8), 1));
-              const delay = i * 0.08; // stagger offset in seconds (CSS handles it)
-              const xOff = (1 - prog) * 50;
-              sg.style.transform = `translateX(${xOff}px)`;
-              sg.style.opacity = Math.min(prog * 1.8, 1);
-            }
-          });
-
-          // ── Vol cards: drift up at slightly different speeds ──
-          volCards.forEach((vc, i) => {
-            const rect = vc.getBoundingClientRect();
-            const wh = window.innerHeight;
-            if (rect.top < wh && rect.bottom > 0) {
-              const speed = i === 0 ? 0.04 : 0.07;
-              const offset = (rect.top - wh * 0.5) * speed;
-              vc.style.transform = vc.matches(":hover")
-                ? vc.style.transform // don't override hover
-                : `translateY(${Math.max(offset, 0)}px)`;
-            }
-          });
+      /* ── Trailing "data stream" lines ── */
+      const streams = [];
+      const STREAM_COUNT = 8;
+      class Stream{
+        constructor(){this.reset();}
+        reset(){
+          this.x = Math.random()*W;
+          this.y = Math.random()*H*0.5;
+          this.length = Math.random()*80+40;
+          this.speed = Math.random()*1.5+0.5;
+          this.opacity = Math.random()*0.12+0.04;
+          this.width = Math.random()*0.8+0.3;
         }
+        update(){
+          this.y += this.speed;
+          if(this.y-this.length > H) this.reset();
+        }
+        draw(){
+          const grad = ctx.createLinearGradient(this.x, this.y-this.length, this.x, this.y);
+          grad.addColorStop(0,'rgba(99,102,241,0)');
+          grad.addColorStop(0.5,`rgba(167,139,250,${this.opacity})`);
+          grad.addColorStop(1,'rgba(99,102,241,0)');
+          ctx.globalAlpha = 1;
+          ctx.strokeStyle = grad;
+          ctx.lineWidth = this.width;
+          ctx.beginPath();
+          ctx.moveTo(this.x, this.y-this.length);
+          ctx.lineTo(this.x, this.y);
+          ctx.stroke();
+        }
+      }
+      for(let i=0;i<STREAM_COUNT;i++) streams.push(new Stream());
 
-        // Init: set initial states for titles
-        bigTitles.forEach((el) => {
-          el.style.transition = "none";
-          el.style.opacity = "0";
-          el.style.transform = "translateX(-60px)";
-        });
-        skillGroups.forEach((sg) => {
-          sg.style.opacity = "0";
-          sg.style.transform = "translateX(50px)";
-        });
+      function animateParticles(){
+        ctx.clearRect(0,0,W,H);
+        streams.forEach(s=>{s.update();s.draw();});
+        particles.forEach(p=>{p.update();p.draw();});
+        ctx.globalAlpha = 1;
+        requestAnimationFrame(animateParticles);
+      }
+      animateParticles();
 
-        // Debounce resize
-        window.addEventListener("resize", () => {
-          heroHeight = hero.offsetHeight;
+      /* ── Custom cursor ── */
+      const isMouse = window.matchMedia('(hover:hover) and (pointer:fine)').matches;
+      const cur = document.getElementById('cursor');
+      const ring = document.getElementById('cursorRing');
+      if(!isMouse){cur.style.display='none';ring.style.display='none';}
+      else{
+        let mx=0,my=0,rx=0,ry=0;
+        document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px';});
+        (function tick(){rx+=(mx-rx)*.12;ry+=(my-ry)*.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(tick);})();
+        document.querySelectorAll('a,button,[class*="btn"],[class*="card"]').forEach(el=>{
+          el.addEventListener('mouseenter',()=>document.body.classList.add('cursor-hover'));
+          el.addEventListener('mouseleave',()=>document.body.classList.remove('cursor-hover'));
         });
-        window.addEventListener("scroll", onScroll, { passive: true });
-        // Run once on load
-        requestAnimationFrame(applyParallax);
-      })();
+      }
+
+      /* ── Hero orb parallax ── */
+      const hero = document.getElementById('hero');
+      const orbData = [
+        {el:document.getElementById('orb1'),dx:-.028,dy:-.022},
+        {el:document.getElementById('orb2'),dx:.022,dy:-.016},
+        {el:document.getElementById('orb3'),dx:-.016,dy:.026},
+        {el:document.getElementById('orb4'),dx:.032,dy:.02},
+        {el:document.getElementById('orb5'),dx:-.022,dy:-.028},
+        {el:document.getElementById('orb6'),dx:.018,dy:.014},
+      ];
+      if(isMouse){
+        hero.addEventListener('mousemove',e=>{
+          const r=hero.getBoundingClientRect();
+          const cx=e.clientX-r.left-r.width/2;
+          const cy=e.clientY-r.top-r.height/2;
+          orbData.forEach(o=>o.el.style.transform=`translate(${cx*o.dx}px,${cy*o.dy}px)`);
+        });
+        hero.addEventListener('mouseleave',()=>orbData.forEach(o=>o.el.style.transform=''));
+      }
+
+      /* ── Hero 3D tilt ── */
+      const nameWrap = document.getElementById('heroNameContainer');
+      const avatar = document.getElementById('heroAvatar');
+      if(isMouse){
+        hero.addEventListener('mousemove',e=>{
+          const r=hero.getBoundingClientRect();
+          const nx=((e.clientX-r.left)/r.width-.5)*2;
+          const ny=((e.clientY-r.top)/r.height-.5)*2;
+          nameWrap.style.transform=`perspective(900px) rotateY(${nx*7}deg) rotateX(${-ny*4.5}deg)`;
+          avatar.style.transform=`translate(-50%,-50%) translateZ(70px) rotateY(${-nx*4}deg) rotateX(${ny*3}deg)`;
+        });
+        hero.addEventListener('mouseleave',()=>{
+          nameWrap.style.transform='';
+          avatar.style.transform='translate(-50%,-50%) translateZ(50px)';
+        });
+      }
+
+      /* ── Project cards 3D tilt ── */
+      if(isMouse){
+        document.querySelectorAll('.project-card').forEach(card=>{
+          card.addEventListener('mousemove',e=>{
+            const r=card.getBoundingClientRect();
+            const cx=(e.clientX-r.left)/r.width-.5;
+            const cy=(e.clientY-r.top)/r.height-.5;
+            card.style.transform=`perspective(1100px) rotateY(${cx*9}deg) rotateX(${-cy*6}deg) translateZ(6px)`;
+          });
+          card.addEventListener('mouseleave',()=>{
+            card.style.transform='perspective(1100px) rotateY(0deg) rotateX(0deg) translateZ(0)';
+            card.style.transition='transform .5s ease,background .25s,box-shadow .25s';
+            setTimeout(()=>card.style.transition='',500);
+          });
+        });
+      }
+
+      /* ── Scroll reveal ── */
+      const io = new IntersectionObserver(entries=>{
+        entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});
+      },{threshold:.1});
+      document.querySelectorAll('.reveal').forEach((el,i)=>{
+        el.style.transitionDelay=(i%4)*.07+'s';
+        io.observe(el);
+      });
+
+      /* ── Parallax scroll ── */
+      const heroName = document.getElementById('heroNameContainer');
+      const heroAv = document.getElementById('heroAvatar');
+      const heroBottom = document.querySelector('.hero-bottom');
+      const bigTitles = document.querySelectorAll('.big-title,.about-headline,.projects-big-title,.contact-title');
+      const laptops = document.querySelectorAll('.laptop-frame');
+      const skillGroups = document.querySelectorAll('.skill-group');
+      const volCards = document.querySelectorAll('.vol-card');
+      let ticking=false,lastScroll=0,heroHeight=hero.offsetHeight;
+
+      function onScroll(){lastScroll=window.scrollY;if(!ticking){requestAnimationFrame(applyParallax);ticking=true;}}
+
+      function applyParallax(){
+        const s=lastScroll; ticking=false;
+        updateScrollBar();
+        if(s<heroHeight*1.2){
+          const nameY=s*.35;
+          const currentTransform=heroName.style.transform;
+          const hasTilt=currentTransform.includes('perspective');
+          if(!hasTilt) heroName.style.transform=`translateY(${-nameY}px)`;
+          const avTilt=heroAv.style.transform;
+          if(!avTilt.includes('rotateY')) heroAv.style.transform=`translate(-50%,calc(-50% - ${s*.3*.3}px)) translateZ(50px)`;
+          const bioProgress=Math.min(s/(heroHeight*.5),1);
+          if(heroBottom){heroBottom.style.transform=`translateY(${-s*.18}px)`;heroBottom.style.opacity=Math.max(1-bioProgress*1.4,0);}
+          if(!isMouse){
+            document.getElementById('orb1').style.transform=`translateY(${s*.12}px)`;
+            document.getElementById('orb2').style.transform=`translateY(${s*-.08}px)`;
+            document.getElementById('orb3').style.transform=`translateY(${s*.06}px)`;
+          } else {
+            document.getElementById('orb1').style.marginTop=`${s*.1}px`;
+            document.getElementById('orb2').style.marginTop=`${s*-.06}px`;
+            document.getElementById('orb3').style.marginTop=`${s*.05}px`;
+          }
+        }
+        bigTitles.forEach(el=>{
+          const rect=el.getBoundingClientRect();const wh=window.innerHeight;
+          if(rect.top<wh&&rect.bottom>0){
+            const prog=1-Math.max(0,Math.min(rect.top/(wh*.72),1));
+            el.style.transform=`translateX(${(1-prog)*-60}px)`;
+            el.style.opacity=Math.min(prog*1.6,1);
+          }
+        });
+        laptops.forEach(lp=>{
+          const rect=lp.getBoundingClientRect();const wh=window.innerHeight;
+          if(rect.top<wh&&rect.bottom>0){const prog=1-Math.max(0,Math.min(rect.top/wh,1));lp.style.transform=`translateY(${(1-prog)*22}px)`;}
+        });
+        skillGroups.forEach((sg,i)=>{
+          const rect=sg.getBoundingClientRect();const wh=window.innerHeight;
+          if(rect.top<wh&&rect.bottom>0){
+            const prog=1-Math.max(0,Math.min(rect.top/(wh*.8),1));
+            sg.style.transform=`translateX(${(1-prog)*50}px)`;
+            sg.style.opacity=Math.min(prog*1.8,1);
+          }
+        });
+        volCards.forEach((vc,i)=>{
+          const rect=vc.getBoundingClientRect();const wh=window.innerHeight;
+          if(rect.top<wh&&rect.bottom>0){
+            const speed=i===0?.04:.07;
+            const offset=(rect.top-wh*.5)*speed;
+            if(!vc.matches(':hover')) vc.style.transform=`translateY(${Math.max(offset,0)}px)`;
+          }
+        });
+      }
+
+      bigTitles.forEach(el=>{el.style.transition='none';el.style.opacity='0';el.style.transform='translateX(-60px)';});
+      skillGroups.forEach(sg=>{sg.style.opacity='0';sg.style.transform='translateX(50px)';});
+      window.addEventListener('resize',()=>{heroHeight=hero.offsetHeight;resize();});
+      window.addEventListener('scroll',onScroll,{passive:true});
+      requestAnimationFrame(applyParallax);
+
+    })();
     </script>
   </body>
 </html>
